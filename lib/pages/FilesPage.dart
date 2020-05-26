@@ -1,13 +1,13 @@
 import 'dart:async';
 
+import 'package:bddisk/Constant.dart';
 import 'package:bddisk/components/SearchInput.dart';
 import 'package:bddisk/files/DiskFile.dart';
 import 'package:bddisk/files/FilesList.dart';
-import 'package:bddisk/files/FilesState.dart';
 import 'package:bddisk/files/file_store/FileStore.dart';
 import 'package:bddisk/files/file_store/SystemFileStore.dart';
-import 'package:bddisk/helpers/PathUtils.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -44,7 +44,7 @@ class _FilesPageState extends State<FilesPage> {
       return Future.value(false);
     }
 
-    _currPath = PathUtils.dirname(_currPath);
+    _currPath = p.dirname(_currPath);
     print("back parent dir: $_currPath");
     _requestFiles();
     return Future.value(false);
@@ -66,9 +66,9 @@ class _FilesPageState extends State<FilesPage> {
         _initRootPath(widget.rootPath);
       } else {
         getExternalStorageDirectory().then((value) {
-          String sDCardDir = value.path;
-          print("sDCardDir $sDCardDir");
-          _initRootPath(sDCardDir);
+          String baseDir = value.path;
+          print("baseDir $baseDir");
+          _initRootPath(baseDir);
         });
       }
     });
@@ -90,7 +90,7 @@ class _FilesPageState extends State<FilesPage> {
 
     widget.fileStore.list(_currPath).then((files) {
       setState(() {
-        _title = PathUtils.basenameWithoutExtension(_currPath);
+        _title = p.basenameWithoutExtension(_currPath);
         _diskFiles = files;
         _filesState = FilesState.loaded;
       });
@@ -116,9 +116,7 @@ class _FilesPageState extends State<FilesPage> {
           children: <Widget>[SizedBox(height: 200), CircularProgressIndicator(strokeWidth: 4.0), Text("正在加载")],
         );
       case FilesState.loaded:
-        return Expanded(
-          child: FileListWidget(_diskFiles, onFileTap: _onForwardDir),
-        );
+        return FileListWidget(_diskFiles, onFileTap: _onForwardDir);
       case FilesState.fail:
         return Column(
           children: <Widget>[

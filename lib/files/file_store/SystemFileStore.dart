@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import '../../helpers/PathUtils.dart';
+import 'package:path/path.dart' as p;
+
 import '../DiskFile.dart';
 import '../SystemFile.dart';
 import 'FileStore.dart';
@@ -19,7 +20,7 @@ class SystemFileStore implements FileStore {
     var listOfFiles = directory.list();
     listOfFiles.listen((file) {
       print("file： ${file.path}");
-      var fileName = PathUtils.basename(file.path);
+      var fileName = p.basename(file.path);
       print("fileName $fileName");
       // AppConfig.instance.showAllFiles
       if (file.path == null || fileName.substring(0, 1) == "." || count++ < start) return;
@@ -35,7 +36,6 @@ class SystemFileStore implements FileStore {
         _diskFilesComplete.complete('');
       }
     }, onError: (e) => _diskFilesComplete.completeError(e));
-    print(directory.listSync());
     await _diskFilesComplete.future;
     FileStore.sortFiles(diskFiles, order);
     return diskFiles;
@@ -51,7 +51,7 @@ class SystemFileStore implements FileStore {
     var _diskFilesComplete = Completer();
     listOfFiles.listen((file) {
       print("file： ${file.path}");
-      var fileName = PathUtils.basename(file.path);
+      var fileName = p.basename(file.path);
       print("fileName $fileName");
       // AppConfig.instance.showAllFiles
       if (file.path == null ||
