@@ -7,3 +7,4 @@ class Constant {
 }
 
 enum FilesState { loading, loaded, fail }
+enum SearchState { typing, loading, done, empty, fail }

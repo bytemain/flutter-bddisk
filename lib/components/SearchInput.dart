@@ -2,19 +2,49 @@ import 'package:flutter/material.dart';
 
 typedef SearchInputOnFocusCallback = void Function();
 typedef SearchInputOnSubmittedCallback = void Function(String value);
+typedef SearchInputOnChanged = void Function(String value);
+typedef SearchInputOnClear = void Function();
 
 // ignore: must_be_immutable
-class SearchInputWidget extends StatelessWidget {
+class SearchInputWidget extends StatefulWidget {
   SearchInputOnFocusCallback onTap;
   SearchInputOnSubmittedCallback onSubmitted;
+  SearchInputOnChanged onChanged;
+  SearchInputOnClear onClear;
+  String text;
+  TextEditingController controller;
 
-  SearchInputWidget({this.onTap, this.onSubmitted});
+  bool readOnly;
+  bool showCursor;
+  bool autofocus;
 
+  SearchInputWidget({
+    this.controller,
+    this.onTap,
+    this.onSubmitted,
+    this.onChanged,
+    this.onClear,
+    this.readOnly = false,
+    this.showCursor,
+    this.autofocus = false,
+  });
+
+  @override
+  State<StatefulWidget> createState() => _SearchInputWidgetState();
+}
+
+// ignore: must_be_immutable
+class _SearchInputWidgetState extends State<SearchInputWidget> {
   @override
   Widget build(BuildContext context) {
     return TextField(
-      onTap: onTap,
-      onSubmitted: onSubmitted,
+      readOnly: widget.readOnly,
+      showCursor: widget.showCursor,
+      autofocus: widget.autofocus,
+      controller: widget.controller,
+      onTap: widget.onTap,
+      onSubmitted: widget.onSubmitted,
+      onChanged: widget.onChanged,
       decoration: InputDecoration(
         hintText: "搜索网盘文件",
         filled: true,
@@ -27,6 +57,15 @@ class SearchInputWidget extends StatelessWidget {
           Icons.search,
           color: Colors.black26,
         ),
+        suffixIcon: (widget.controller?.text?.length ?? 0) > 0
+            ? IconButton(
+                icon: Icon(Icons.clear),
+                onPressed: () {
+                  widget?.onClear();
+                  widget.controller?.clear();
+                },
+              )
+            : null,
       ),
     );
   }

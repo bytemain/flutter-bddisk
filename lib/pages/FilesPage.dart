@@ -34,7 +34,7 @@ class FilesPage extends StatefulWidget {
 class _FilesPageState extends State<FilesPage> {
   var _diskFiles = <DiskFile>[];
   String _title = '根目录';
-  String _currPath = '/';
+  String _currPath = '.';
   String _failMsg = '';
   FilesState _filesState = FilesState.loaded;
 
@@ -45,7 +45,6 @@ class _FilesPageState extends State<FilesPage> {
     }
 
     _currPath = p.dirname(_currPath);
-    print("back parent dir: $_currPath");
     _requestFiles();
     return Future.value(false);
   }
@@ -60,14 +59,11 @@ class _FilesPageState extends State<FilesPage> {
   void initState() {
     super.initState();
     Permission.storage.request().isGranted.then((value) {
-      print("storage permission: $value");
-      print("widget.rootPath != null ${widget.rootPath != null}");
       if (widget.rootPath != null) {
         _initRootPath(widget.rootPath);
       } else {
         getExternalStorageDirectory().then((value) {
           String baseDir = value.path;
-          print("baseDir $baseDir");
           _initRootPath(baseDir);
         });
       }
@@ -86,7 +82,6 @@ class _FilesPageState extends State<FilesPage> {
     setState(() {
       _filesState = FilesState.loading;
     });
-    print("request files: $_currPath");
 
     widget.fileStore.list(_currPath).then((files) {
       setState(() {
@@ -104,8 +99,7 @@ class _FilesPageState extends State<FilesPage> {
 
   bool _isAllowLeading() {
     if (widget.rootPath == null) return false;
-    print(" _isAllowLeading ${widget.rootPath.compareTo(_currPath)}");
-    return widget.rootPath.compareTo(_currPath) == 0; // && !widget.allowPop
+    return widget.rootPath.compareTo(_currPath) == 0 && !widget.allowPop;
   }
 
   // ignore: missing_return
@@ -139,13 +133,6 @@ class _FilesPageState extends State<FilesPage> {
     );
   }
 
-  void _onSearchInputSubmit(String value) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => SearchPage(widget.fileStore, currPath: _currPath)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -171,10 +158,13 @@ class _FilesPageState extends State<FilesPage> {
                     children: <Widget>[
                       Text(_currPath),
                       Center(
-                          child: SearchInputWidget(
-                        onTap: _onSearchInputTap,
-                        onSubmitted: _onSearchInputSubmit,
-                      )),
+                        child: SearchInputWidget(
+                          autofocus: false,
+                          showCursor: false,
+                          readOnly: true,
+                          onTap: _onSearchInputTap,
+                        ),
+                      ),
                       Center(child: _buildFilesWidget()),
                     ],
                   ),

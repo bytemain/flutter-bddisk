@@ -1,114 +1,188 @@
+import 'package:bddisk/Constant.dart';
+import 'package:bddisk/components/SearchHistoryWidget.dart';
+import 'package:bddisk/components/SearchInput.dart';
+import 'package:bddisk/files/DiskFile.dart';
+import 'package:bddisk/files/FilesList.dart';
+import 'package:bddisk/files/file_store/FileStore.dart';
+import 'package:bddisk/helpers/DbHelper.dart';
+import 'package:bddisk/models/SearchHistory.dart';
+import 'package:bddisk/pages/FilesPage.dart';
 import 'package:flutter/material.dart';
-
-import '../components/SearchInput.dart';
-import '../files/file_store/FileStore.dart';
 
 // ignore: must_be_immutable
 class SearchPage extends StatefulWidget {
   FileStore fileStore;
   String currPath;
-  SearchPage(this.fileStore, {this.currPath});
+  String searchKeyword;
+
+  SearchPage(this.fileStore, {this.currPath, this.searchKeyword});
 
   @override
   _SearchPageState createState() => _SearchPageState();
 }
 
 class _SearchPageState extends State<SearchPage> {
-  final List<String> _list = List<String>();
-  var inputText = "";
+  String _searchKeyword;
+  String _failMsg;
+  SearchState _searchState = SearchState.empty;
+  var _historyWords = List<SearchHistory>();
+  var _searchResult = List<DiskFile>();
+  TextEditingController inputController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.searchKeyword != null)
+      setState(() {
+        _searchKeyword = widget.searchKeyword;
+      });
+    DbHelper.instance.queryAll().then((value) => setState(() => _historyWords = value));
+  }
 
   void _onSearchInputSubmit(String value) {
+    value = value.trim();
+    if (value.isEmpty) return;
     setState(() {
-      if (value.isNotEmpty) _list.insert(0, value);
+      _searchKeyword = value;
+      _searchState = SearchState.loading;
+    });
+
+    widget.fileStore.search(value, dir: widget.currPath, recursion: 1).then((listOfFiles) {
+      setState(() {
+        _searchState = SearchState.done;
+        _searchResult = listOfFiles;
+      });
+      _onSearchHistoryEvent(SearchHistoryEvent.insert, SearchHistory(value));
+    }).catchError((error) {
+      setState(() {
+        _failMsg = error.toString();
+      });
     });
   }
 
-  Widget _displayClearButton() {
-    if (_list.isNotEmpty) {
-      return FlatButton(
-        textColor: Colors.blue,
-        disabledColor: Colors.grey,
-        disabledTextColor: Colors.black,
-        padding: EdgeInsets.all(8.0),
-        splashColor: Colors.blueAccent,
-        onPressed: () {
-          setState(() {
-            _list.clear();
-          });
-        },
-        child: Text(
-          "清除历史记录",
-          style: TextStyle(fontSize: 18.0),
-        ),
-      );
-    }
-    return SizedBox(
-      height: 10,
-    );
+  void _onOpenFile(DiskFile file) {
+    if (file.isDir == 0) return;
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => FilesPage(
+                  rootPath: file.path,
+                  allowPop: true,
+                )));
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final Iterable<ListTile> tiles = _list.map(
-      (s) {
-        return ListTile(
-          title: Text(
-            s,
-          ),
-          trailing: IconButton(
-            icon: Icon(Icons.delete),
-            onPressed: () {
-              setState(() {
-                _list.remove(s);
-              });
-            },
-          ),
-          onTap: () {
-            setState(() {
-              inputText = s;
-            });
-          },
-        );
-      },
-    );
-    final List<Widget> divided = ListTile.divideTiles(
-      context: context,
-      tiles: tiles,
-    ).toList();
+  void _onSearchTextChanged(String value) {
+    setState(() {
+      _searchKeyword = value.trim();
+      _searchState = SearchState.typing;
+    });
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-          title: SafeArea(
-        child: Expanded(
-          child: Row(
+  void _onSearchHistoryEvent(SearchHistoryEvent event, SearchHistory history) {
+    switch (event) {
+      case SearchHistoryEvent.insert:
+        DbHelper.instance.insert(history).then((value) => setState(() => _historyWords.insert(0, value)));
+        break;
+      case SearchHistoryEvent.delete:
+        DbHelper.instance.deleteById(history?.id).then((value) => setState(() => _historyWords.remove(history)));
+        break;
+      case SearchHistoryEvent.clear:
+        DbHelper.instance.deleteAll().then((value) => setState(() => _historyWords.clear()));
+        break;
+      case SearchHistoryEvent.search:
+        _onSearchInputSubmit(history?.keyword);
+        setState(() {
+          inputController.text = history?.keyword;
+        });
+        break;
+    }
+  }
+
+  Widget _buildPageBody() {
+    switch (_searchState) {
+      case SearchState.loading:
+        return Column(
+          children: <Widget>[SizedBox(height: 200), CircularProgressIndicator(strokeWidth: 4.0), Text("正在加载")],
+        );
+      case SearchState.typing:
+      case SearchState.empty:
+        return SearchHistoryWidget(
+          _historyWords,
+          searchKeyword: _searchKeyword,
+          eventCallback: _onSearchHistoryEvent,
+        );
+      case SearchState.done:
+        return SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Flexible(
-                child: SearchInputWidget(
-                  onSubmitted: _onSearchInputSubmit,
+              ListTile(
+                title: Text(
+                  "搜索结果 (${_searchResult.length})",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Container(
+                height: 500,
+                child: FileListWidget(
+                  _searchResult,
+                  onFileTap: _onOpenFile,
                 ),
               ),
             ],
           ),
-        ),
-      )),
-      body: Container(
-        margin: EdgeInsets.only(left: 25, right: 25, top: 10),
-        child: Column(
+        );
+      case SearchState.fail:
+        return Column(
           children: <Widget>[
-            ListTile(
-              title: Text(
-                "搜索历史",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+            SizedBox(height: 200),
+            IconButton(
+              icon: Icon(Icons.refresh),
+              iconSize: 96,
+              onPressed: () {
+                print("SearchState.fail");
+              },
             ),
-            Container(
-              child: ListView(
-                shrinkWrap: true,
-                children: divided,
-              ),
-            ),
-            _displayClearButton()
+            Text(_failMsg)
           ],
+        );
+    }
+  }
+
+  void _onTap() {
+    setState(() {
+      _searchState = SearchState.typing;
+    });
+  }
+
+  void _onInputClear() {
+    setState(() {
+      _searchKeyword = "";
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: SafeArea(
+          child: SearchInputWidget(
+            autofocus: true,
+            controller: inputController,
+            onTap: _onTap,
+            onSubmitted: _onSearchInputSubmit,
+            onChanged: _onSearchTextChanged,
+            onClear: _onInputClear,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Container(
+          margin: EdgeInsets.only(left: 25, right: 25, top: 10),
+          child: Center(
+            child: _buildPageBody(),
+          ),
         ),
       ),
     );
