@@ -80,8 +80,6 @@ class DbHelper {
     maps.forEach((element) {
       list.add(SearchHistory.fromMap(element));
     });
-    print("queryAll");
-    print(maps);
     return list;
   }
 

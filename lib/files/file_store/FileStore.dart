@@ -1,4 +1,4 @@
-import '../DiskFile.dart';
+import '../../models/DiskFile.dart';
 
 abstract class FileStore {
   /// 获取指定 [dir] 下的文件列表

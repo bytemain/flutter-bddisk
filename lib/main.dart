@@ -1,11 +1,37 @@
+import 'package:bddisk/pages/BdOAuth2Page.dart';
+import 'package:bddisk/pages/Home.dart';
 import 'package:flutter/material.dart';
 
-import 'pages/FilesPage.dart';
-import 'pages/LoginPage.dart';
-import 'pages/PathExample.dart';
-import 'pages/PersonalCenter.dart';
+import 'AppConfig.dart';
 
 void main() => runApp(MyApp());
+
+// ignore: missing_return
+Widget loadLoginPage(BuildContext context) {
+  AppConfig.instance.token.then((token) {
+    if (token == null || token.isExpired) {
+      print("token is expired.");
+      Navigator.of(context).pushNamedAndRemoveUntil('/Login', (_) => false);
+    } else {
+      print("token is valid.");
+      Navigator.of(context).pushNamedAndRemoveUntil('/Home', (_) => false);
+    }
+  });
+  return Scaffold(
+    body: Center(
+        child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        CircularProgressIndicator(strokeWidth: 4.0),
+        SizedBox(height: 40),
+        Text(
+          "正在加载",
+          style: TextStyle(fontSize: 20),
+        )
+      ],
+    )),
+  );
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -15,71 +41,16 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      initialRoute: '/',
       routes: {
         /**
          * 命名导航路由，启动程序默认打开的是以'/'对应的界面LoginScreen()
          * 凡是后面使用Navigator.of(context).pushNamed('/Home')，都会跳转到Home()，
          */
-        '/': (BuildContext context) => new LoginPage(),
-        '/Home': (BuildContext context) => new Home(),
+        '/': (BuildContext context) => loadLoginPage(context),
+        '/Login': (BuildContext context) => BdOAuth2Page(),
+        '/Home': (BuildContext context) => Home(),
       },
-    );
-  }
-}
-
-class Home extends StatefulWidget {
-  Home({Key key}) : super(key: key);
-
-  @override
-  _HomeState createState() => _HomeState();
-}
-
-class _HomeState extends State<Home> {
-  int _selectedIndex = 0;
-  final List<Widget> _widgetOptions = <Widget>[
-    FilesPage(),
-    PersonalCenter(),
-    PathExample(title: 'Path Provider'),
-  ];
-  final List<BottomNavigationBarItem> _bottomNavigationBarItem = <BottomNavigationBarItem>[
-    BottomNavigationBarItem(
-      icon: Icon(Icons.archive),
-      title: Text('文件'),
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.person),
-      title: Text('我的'),
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.terrain),
-      title: Text('Path'),
-    ),
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _widgetOptions,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: _bottomNavigationBarItem,
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
-        onTap: _onItemTapped,
-      ),
     );
   }
 }

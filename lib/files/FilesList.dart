@@ -1,7 +1,8 @@
+import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 
 import '../helpers/Utils.dart';
-import 'DiskFile.dart';
+import '../models/DiskFile.dart';
 
 typedef FileOnTapCallback = void Function(DiskFile file);
 
@@ -55,7 +56,7 @@ class FileListWidget extends StatelessWidget {
             ],
           ),
           subtitle: Text(
-            Utils.getDataTime(file.serverCTime) + "  " + Utils.getFileSize(file.size),
+            Utils.getDataTime(file.serverCTime) + "  " + filesize(file.size),
           ),
         ),
       ),

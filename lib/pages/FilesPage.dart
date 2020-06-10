@@ -2,14 +2,12 @@ import 'dart:async';
 
 import 'package:bddisk/Constant.dart';
 import 'package:bddisk/components/SearchInput.dart';
-import 'package:bddisk/files/DiskFile.dart';
 import 'package:bddisk/files/FilesList.dart';
+import 'package:bddisk/files/file_store/BdDiskFileStore.dart';
 import 'package:bddisk/files/file_store/FileStore.dart';
-import 'package:bddisk/files/file_store/SystemFileStore.dart';
+import 'package:bddisk/models/DiskFile.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import 'SearchPage.dart';
 
@@ -23,8 +21,8 @@ class FilesPage extends StatefulWidget {
   // 指定的跟目录的路径
   String rootPath;
 
-  FilesPage({this.fileStore, this.rootPath, this.allowPop = false}) {
-    if (this.fileStore == null) this.fileStore = SystemFileStore();
+  FilesPage({this.fileStore, this.rootPath = "/", this.allowPop = false}) {
+    if (this.fileStore == null) this.fileStore = BdDiskFileStore();
   }
 
   @override
@@ -33,8 +31,8 @@ class FilesPage extends StatefulWidget {
 
 class _FilesPageState extends State<FilesPage> {
   var _diskFiles = <DiskFile>[];
-  String _title = '根目录';
-  String _currPath = '.';
+  String _title = '/';
+  String _currPath = '/';
   String _failMsg = '';
   FilesState _filesState = FilesState.loaded;
 
@@ -58,24 +56,19 @@ class _FilesPageState extends State<FilesPage> {
   @override
   void initState() {
     super.initState();
-    Permission.storage.request().isGranted.then((value) {
-      if (widget.rootPath != null) {
-        _initRootPath(widget.rootPath);
-      } else {
-        getExternalStorageDirectory().then((value) {
-          String baseDir = value.path;
-          _initRootPath(baseDir);
-        });
-      }
-    });
+    if (widget.rootPath != null) {
+      _initRootPath(widget.rootPath);
+    } else {
+      _initRootPath("/");
+    }
   }
 
   _initRootPath(String path) {
     setState(() {
       widget.rootPath = path;
       _currPath = path;
-      _requestFiles();
     });
+    _requestFiles();
   }
 
   Future<void> _requestFiles() async {
@@ -137,7 +130,7 @@ class _FilesPageState extends State<FilesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text(_title),
+          title: Text(_currPath),
           elevation: 0.0,
           leading: _isAllowLeading()
               ? Container()
@@ -156,7 +149,6 @@ class _FilesPageState extends State<FilesPage> {
                   margin: EdgeInsets.only(left: 25, right: 25, top: 5),
                   child: Column(
                     children: <Widget>[
-                      Text(_currPath),
                       Center(
                         child: SearchInputWidget(
                           autofocus: false,

@@ -1,10 +1,10 @@
 import 'package:bddisk/Constant.dart';
 import 'package:bddisk/components/SearchHistoryWidget.dart';
 import 'package:bddisk/components/SearchInput.dart';
-import 'package:bddisk/files/DiskFile.dart';
 import 'package:bddisk/files/FilesList.dart';
 import 'package:bddisk/files/file_store/FileStore.dart';
 import 'package:bddisk/helpers/DbHelper.dart';
+import 'package:bddisk/models/DiskFile.dart';
 import 'package:bddisk/models/SearchHistory.dart';
 import 'package:bddisk/pages/FilesPage.dart';
 import 'package:flutter/material.dart';
@@ -63,12 +63,14 @@ class _SearchPageState extends State<SearchPage> {
   void _onOpenFile(DiskFile file) {
     if (file.isDir == 0) return;
     Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => FilesPage(
-                  rootPath: file.path,
-                  allowPop: true,
-                )));
+      context,
+      MaterialPageRoute(
+        builder: (context) => FilesPage(
+          rootPath: file.path,
+          allowPop: true,
+        ),
+      ),
+    );
   }
 
   void _onSearchTextChanged(String value) {
@@ -98,6 +100,7 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
+  // ignore: missing_return
   Widget _buildPageBody() {
     switch (_searchState) {
       case SearchState.loading:
