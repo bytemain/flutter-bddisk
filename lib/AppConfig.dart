@@ -1,5 +1,4 @@
 import 'package:bddisk/helpers/Prefs.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Constant.dart';
@@ -8,7 +7,6 @@ import 'models/BdOAuth2Token.dart';
 class AppConfig {
   factory AppConfig() => _getInstance();
   Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
-  final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 
   static AppConfig get instance => _getInstance();
   static AppConfig _instance;

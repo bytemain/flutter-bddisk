@@ -4,6 +4,7 @@ import 'package:bddisk/helpers/Prefs.dart';
 import 'package:bddisk/models/BdOAuth2Token.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -30,6 +31,8 @@ class _BdOAuth2PageState extends State<BdOAuth2Page> {
   final Completer<WebViewController> _controller = Completer<WebViewController>();
   Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   bool isLoading = true;
+  bool loginSuccess = false;
+
   Widget refreshButton() {
     return FutureBuilder<WebViewController>(
       future: _controller.future,
@@ -73,7 +76,10 @@ class _BdOAuth2PageState extends State<BdOAuth2Page> {
                 setState(() {
                   isLoading = false;
                 });
-                Scaffold.of(context).hideCurrentSnackBar();
+                print("onPageFinished" + url);
+
+                /// 处理重新加载展示的 SnackBar
+                if (!loginSuccess) Scaffold.of(context).hideCurrentSnackBar();
               },
               gestureNavigationEnabled: true,
               navigationDelegate: (NavigationRequest request) {
@@ -107,16 +113,16 @@ class _BdOAuth2PageState extends State<BdOAuth2Page> {
     if (uri == null) return false;
 
     if (uri.pathSegments.contains('login_success') && uri.queryParameters.containsKey('access_token')) {
+      print("登录成功");
       var prefs = await _prefs;
       var token =
           BdOAuth2Token(uri.queryParameters['access_token'], expiresIn: int.parse(uri.queryParameters['expires_in']));
       prefs.setJson(Constant.keyBdOAuth2Token, token.toJson());
-      Scaffold.of(context).showSnackBar(
-        SnackBar(content: Text('登录成功！')),
-      );
+
+      Get.rawSnackbar(message: '登录成功！', instantInit: true);
       Timer(Duration(milliseconds: 1000), () {
         Scaffold.of(context).hideCurrentSnackBar();
-        Navigator.of(context).pushNamedAndRemoveUntil('/Home', (_) => false);
+        Get.offAndToNamed("/Home");
       });
       return true;
     }

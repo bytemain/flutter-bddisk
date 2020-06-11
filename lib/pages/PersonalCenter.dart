@@ -5,6 +5,8 @@ import 'package:bddisk/models/BdDiskQuota.dart';
 import 'package:bddisk/models/BdDiskUser.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
 class PersonalCenter extends StatefulWidget {
   UserRepository userRepository;
@@ -28,7 +30,8 @@ class Choice {
 }
 
 const List<Choice> choices = const <Choice>[
-  const Choice("exit", title: '退出', icon: Icons.exit_to_app),
+  const Choice("logout", title: '退出登录', icon: Icons.power_settings_new),
+  const Choice("exit", title: '退出应用', icon: Icons.exit_to_app),
 ];
 
 class _PersonalCenterState extends State<PersonalCenter> {
@@ -139,27 +142,36 @@ class _PersonalCenterState extends State<PersonalCenter> {
   }
 
   void _select(Choice choice) {
-    if (choice.key == "exit") {
-      widget.userRepository.logout().then((value) {
-        print("logout:" + value.toString());
-        if (value.containsKey("error_code")) {
+    switch (choice.key) {
+      case "logout":
+        widget.userRepository.logout().then((value) {
+          print("logout:" + value.toString());
+          if (value.containsKey("error_code")) {
+            Scaffold.of(context).showSnackBar(
+              SnackBar(content: Text('退出失败！' + value["error_msg"])),
+            );
+          } else {
+            Scaffold.of(context).showSnackBar(
+              SnackBar(content: Text('退出成功！')),
+            );
+          }
+          Timer(Duration(milliseconds: 1000), () {
+            Scaffold.of(context).hideCurrentSnackBar();
+            Get.offAndToNamed("/Login");
+          });
+        }, onError: (e) {
           Scaffold.of(context).showSnackBar(
-            SnackBar(content: Text('退出失败！' + value["error_msg"])),
+            SnackBar(content: Text('失败：' + e)),
           );
-        } else {
-          Scaffold.of(context).showSnackBar(
-            SnackBar(content: Text('退出成功！')),
-          );
-        }
+        });
+        break;
+      case "exit":
+        Get.rawSnackbar(message: "Bye.");
         Timer(Duration(milliseconds: 1000), () {
           Scaffold.of(context).hideCurrentSnackBar();
-          Navigator.of(context).pushNamedAndRemoveUntil('/Login', (_) => false);
+          SystemChannels.platform.invokeMethod('SystemNavigator.pop');
         });
-      }, onError: (e) {
-        Scaffold.of(context).showSnackBar(
-          SnackBar(content: Text('退出失败：' + e)),
-        );
-      });
+        break;
     }
   }
 

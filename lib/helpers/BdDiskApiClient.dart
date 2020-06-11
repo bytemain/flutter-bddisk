@@ -5,6 +5,7 @@ import 'package:bddisk/AppConfig.dart';
 import 'package:bddisk/models/BdDiskFile.dart';
 import 'package:bddisk/models/BdDiskQuota.dart';
 import 'package:bddisk/models/BdDiskUser.dart';
+import 'package:get/get.dart';
 
 class BdDiskApiClient {
   final HttpClient httpClient;
@@ -17,7 +18,10 @@ class BdDiskApiClient {
 
   get accessToken async {
     var token = await AppConfig.instance.token;
-    if (token == null) AppConfig.instance.navigatorKey.currentState.pushNamedAndRemoveUntil("/Login", (route) => false);
+    if (token == null) {
+      Get.offAndToNamed("/Login");
+      return null;
+    }
     return token.accessToken;
   }
 
