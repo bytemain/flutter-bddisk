@@ -1,17 +1,17 @@
 import 'package:bddisk/Constant.dart';
+import 'package:bddisk/components/FilesList.dart';
 import 'package:bddisk/components/SearchHistoryWidget.dart';
 import 'package:bddisk/components/SearchInput.dart';
-import 'package:bddisk/files/FilesList.dart';
-import 'package:bddisk/files/file_store/FileStore.dart';
 import 'package:bddisk/helpers/DbHelper.dart';
-import 'package:bddisk/models/DiskFile.dart';
+import 'package:bddisk/models/BdDiskFile.dart';
+import 'package:bddisk/models/BdDiskFileStore.dart';
 import 'package:bddisk/models/SearchHistory.dart';
 import 'package:bddisk/pages/FilesPage.dart';
 import 'package:flutter/material.dart';
 
 // ignore: must_be_immutable
 class SearchPage extends StatefulWidget {
-  FileStore fileStore;
+  BdDiskFileStore fileStore;
   String currPath;
   String searchKeyword;
 
@@ -26,7 +26,7 @@ class _SearchPageState extends State<SearchPage> {
   String _failMsg;
   SearchState _searchState = SearchState.empty;
   var _historyWords = List<SearchHistory>();
-  var _searchResult = List<DiskFile>();
+  var _searchResult = List<BdDiskFile>();
   TextEditingController inputController = TextEditingController();
 
   @override
@@ -60,7 +60,7 @@ class _SearchPageState extends State<SearchPage> {
     });
   }
 
-  void _onOpenFile(DiskFile file) {
+  void _onOpenFile(BdDiskFile file) {
     if (file.isDir == 0) return;
     Navigator.push(
       context,

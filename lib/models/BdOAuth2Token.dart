@@ -14,13 +14,13 @@ class BdOAuth2Token {
     this.createTime ??= DateTime.now().millisecondsSinceEpoch ~/ 1000;
   }
 
-  BdOAuth2Token.fromJson(Map<String, dynamic> json) {
+  BdOAuth2Token.fromJSON(Map<String, dynamic> json) {
     this.accessToken = json['access_token'];
     this.expiresIn = json['expires_in'];
     this.createTime = json['create_time'];
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJSON() {
     final Map<String, dynamic> json = new Map<String, dynamic>();
     json['access_token'] = this.accessToken;
     json['expires_in'] = this.expiresIn;

@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="li.artin.bddisk"
     android:versionCode="TODO"
     android:versionName="TODO">
@@ -11,8 +12,10 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <application
         android:name="io.flutter.app.FlutterApplication"
+        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="bddisk">
+        android:label="bddisk"
+        tools:targetApi="m">
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
@@ -28,6 +31,15 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <provider
+            android:name="li.artin.bddisk.MainActivity"
+            android:authorities="${applicationId}.flutter_downloader.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths"/>
+        </provider>
     </application>
 
 </manifest>

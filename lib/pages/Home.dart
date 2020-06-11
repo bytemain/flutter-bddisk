@@ -1,5 +1,7 @@
+import 'package:bddisk/pages/PathPage.dart';
 import 'package:flutter/material.dart';
 
+import 'DownloaderPage.dart';
 import 'FilesPage.dart';
 import 'PersonalCenter.dart';
 
@@ -15,6 +17,8 @@ class _HomeState extends State<Home> {
   final List<Widget> _widgetOptions = <Widget>[
     FilesPage(),
     PersonalCenter(),
+    DownloaderPage(),
+    PathProviderPage(title: 'Path Provider')
   ];
   final List<BottomNavigationBarItem> _bottomNavigationBarItem = <BottomNavigationBarItem>[
     BottomNavigationBarItem(
@@ -24,6 +28,14 @@ class _HomeState extends State<Home> {
     BottomNavigationBarItem(
       icon: Icon(Icons.person),
       title: Text('我的'),
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.file_download),
+      title: Text('下载'),
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.show_chart),
+      title: Text('Path'),
     ),
   ];
 
@@ -46,6 +58,7 @@ class _HomeState extends State<Home> {
         children: _widgetOptions,
       ),
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         items: _bottomNavigationBarItem,
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue,

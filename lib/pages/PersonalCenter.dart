@@ -157,7 +157,7 @@ class _PersonalCenterState extends State<PersonalCenter> {
           }
           Timer(Duration(milliseconds: 1000), () {
             Scaffold.of(context).hideCurrentSnackBar();
-            Get.offAndToNamed("/Login");
+            Get.offNamedUntil("/Login", (route) => false);
           });
         }, onError: (e) {
           Scaffold.of(context).showSnackBar(

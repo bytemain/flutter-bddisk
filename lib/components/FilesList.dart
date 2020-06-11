@@ -1,21 +1,22 @@
+import 'package:bddisk/models/BdDiskFile.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 
 import '../helpers/Utils.dart';
-import '../models/DiskFile.dart';
 
-typedef FileOnTapCallback = void Function(DiskFile file);
+typedef FileOnTapCallback = void Function(BdDiskFile file);
 
 // ignore: must_be_immutable
 class FileListWidget extends StatelessWidget {
-  var diskFiles = List<DiskFile>();
+  var diskFiles = List<BdDiskFile>();
   FileOnTapCallback onFileTap;
+
   @override
   Widget build(BuildContext context) => _buildFilesWidget();
 
   FileListWidget(this.diskFiles, {this.onFileTap});
 
-  Widget _buildFolderItem(DiskFile file) {
+  Widget _buildFolderItem(BdDiskFile file) {
     return InkWell(
       child: Container(
         alignment: Alignment.center,
@@ -41,7 +42,7 @@ class FileListWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildFileItem(DiskFile file) {
+  Widget _buildFileItem(BdDiskFile file) {
     return InkWell(
       child: Container(
         alignment: Alignment.center,

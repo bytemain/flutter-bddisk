@@ -1,8 +1,8 @@
 import 'package:intl/intl.dart';
 
 class Utils {
-  static getDataTime(int serverCTime) {
-    var date = new DateTime.fromMillisecondsSinceEpoch(serverCTime * 1000);
+  static getDataTime(int time) {
+    var date = new DateTime.fromMillisecondsSinceEpoch(time * 1000);
     var formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
     String formatted = formatter.format(date);
     return formatted;

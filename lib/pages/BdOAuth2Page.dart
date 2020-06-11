@@ -76,7 +76,6 @@ class _BdOAuth2PageState extends State<BdOAuth2Page> {
                 setState(() {
                   isLoading = false;
                 });
-                print("onPageFinished" + url);
 
                 /// 处理重新加载展示的 SnackBar
                 if (!loginSuccess) Scaffold.of(context).hideCurrentSnackBar();
@@ -113,17 +112,18 @@ class _BdOAuth2PageState extends State<BdOAuth2Page> {
     if (uri == null) return false;
 
     if (uri.pathSegments.contains('login_success') && uri.queryParameters.containsKey('access_token')) {
-      print("登录成功");
       var prefs = await _prefs;
       var token =
           BdOAuth2Token(uri.queryParameters['access_token'], expiresIn: int.parse(uri.queryParameters['expires_in']));
-      prefs.setJson(Constant.keyBdOAuth2Token, token.toJson());
+      prefs.setJson(Constant.keyBdOAuth2Token, token.toJSON());
 
-      Get.rawSnackbar(message: '登录成功！', instantInit: true);
-      Timer(Duration(milliseconds: 1000), () {
-        Scaffold.of(context).hideCurrentSnackBar();
-        Get.offAndToNamed("/Home");
-      });
+      if (!loginSuccess) {
+        Get.rawSnackbar(message: '登录成功！', instantInit: true);
+        Timer(Duration(milliseconds: 1000), () {
+          Scaffold.of(context).hideCurrentSnackBar();
+          Get.offNamedUntil("/Home", (route) => false);
+        });
+      }
       return true;
     }
     return false;

@@ -38,7 +38,7 @@ class AppConfig {
     if (!prefs.containsKey(Constant.keyBdOAuth2Token)) return null;
 
     var json = prefs.getJson(Constant.keyBdOAuth2Token);
-    _bdOAuth2Token = BdOAuth2Token.fromJson(json);
+    _bdOAuth2Token = BdOAuth2Token.fromJSON(json);
     return _bdOAuth2Token;
   }
 }

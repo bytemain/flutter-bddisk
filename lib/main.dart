@@ -1,21 +1,26 @@
 import 'package:bddisk/pages/BdOAuth2Page.dart';
 import 'package:bddisk/pages/Home.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:get/get.dart';
 
 import 'AppConfig.dart';
 
-void main() => runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FlutterDownloader.initialize(debug: true);
+  runApp(MyApp());
+}
 
 // ignore: missing_return
 Widget loadLoginPage(BuildContext context) {
   AppConfig.instance.token.then((token) {
     if (token == null || token.isExpired) {
       print("token is expired.");
-      Get.offAndToNamed("/Login");
+      Get.offNamedUntil("/Login", (route) => false);
     } else {
       print("token is valid.");
-      Get.offAndToNamed("/Home");
+      Get.offNamedUntil("/Home", (route) => false);
     }
   });
   return Scaffold(
@@ -38,7 +43,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: '百度网盘 Demo',
+      title: 'BD Disk',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
