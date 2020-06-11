@@ -29,27 +29,28 @@ class BdOAuth2Page extends StatefulWidget {
 class _BdOAuth2PageState extends State<BdOAuth2Page> {
   final Completer<WebViewController> _controller = Completer<WebViewController>();
   Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
-  bool isLoading = true; // 设置状态
-  Widget favoriteButton() {
+  bool isLoading = true;
+  Widget refreshButton() {
     return FutureBuilder<WebViewController>(
-        future: _controller.future,
-        builder: (BuildContext context, AsyncSnapshot<WebViewController> controller) {
-          if (controller.hasData) {
-            return FloatingActionButton(
-              onPressed: () async {
-                Scaffold.of(context).showSnackBar(
-                  SnackBar(content: Text('正在重新加载')),
-                );
-                setState(() {
-                  isLoading = true;
-                });
-                controller.data?.reload();
-              },
-              child: const Icon(Icons.replay),
-            );
-          }
-          return Container();
-        });
+      future: _controller.future,
+      builder: (BuildContext context, AsyncSnapshot<WebViewController> controller) {
+        if (controller.hasData) {
+          return FloatingActionButton(
+            onPressed: () async {
+              Scaffold.of(context).showSnackBar(
+                SnackBar(content: Text('正在重新加载')),
+              );
+              setState(() {
+                isLoading = true;
+              });
+              controller.data?.reload();
+            },
+            child: const Icon(Icons.replay),
+          );
+        }
+        return Container();
+      },
+    );
   }
 
   @override
@@ -58,7 +59,7 @@ class _BdOAuth2PageState extends State<BdOAuth2Page> {
       appBar: AppBar(
         title: const Text('百度账户授权登录'),
       ),
-      floatingActionButton: favoriteButton(),
+      floatingActionButton: refreshButton(),
       body: Builder(builder: (BuildContext context) {
         return Stack(
           children: <Widget>[
@@ -69,7 +70,6 @@ class _BdOAuth2PageState extends State<BdOAuth2Page> {
                 _controller.complete(webViewController);
               },
               onPageFinished: (String url) {
-                print('onPageFinished : $url');
                 setState(() {
                   isLoading = false;
                 });

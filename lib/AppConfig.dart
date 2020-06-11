@@ -1,4 +1,5 @@
 import 'package:bddisk/helpers/Prefs.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Constant.dart';
@@ -7,6 +8,7 @@ import 'models/BdOAuth2Token.dart';
 class AppConfig {
   factory AppConfig() => _getInstance();
   Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+  final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 
   static AppConfig get instance => _getInstance();
   static AppConfig _instance;
@@ -20,16 +22,16 @@ class AppConfig {
     return _instance;
   }
 
-  String get token1 {
-    return "123.44fb96b72a48c648f890f6b0dea36a09.Y3uUs40Zcrd161XmwNLUyQylqTVGtN65qnpaZBD.ci8tiQ";
-  }
-
   static final String baiduClientId = 'iap3UEKzq5KeVg3KDj9bTfRt';
 
   static final String baiduOAuth2Url =
       'https://openapi.baidu.com/oauth/2.0/authorize?response_type=token&client_id=$baiduClientId&redirect_uri=oob&scope=basic,netdisk&display=mobile&state=xxx';
 
   BdOAuth2Token _bdOAuth2Token;
+
+  void setToken(BdOAuth2Token t) {
+    _bdOAuth2Token = t;
+  }
 
   Future<BdOAuth2Token> get token async {
     if (_bdOAuth2Token != null) return _bdOAuth2Token;

@@ -1,3 +1,4 @@
+import 'package:bddisk/AppConfig.dart';
 import 'package:bddisk/helpers/Prefs.dart';
 import 'package:bddisk/models/BdDiskQuota.dart';
 import 'package:bddisk/models/BdDiskUser.dart';
@@ -51,6 +52,7 @@ class UserRepository {
     prefs.remove(Constant.keyBdOAuth2Token);
     prefs.remove(Constant.keyDiskQuota);
     prefs.remove(Constant.keyUserInfo);
+    AppConfig.instance.setToken(null);
     return response;
   }
 }

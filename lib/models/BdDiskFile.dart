@@ -1,16 +1,19 @@
 import 'package:bddisk/models/DiskFile.dart';
 
 class BdDiskFile extends DiskFile {
-  int category;
   int fsId;
+
+  /// 文件在客户端创建时间
   int localCTime;
+
+  /// 文件在客户端修改时间
   int localMTime;
   int operId;
-  String path;
   int privacy;
+
+  /// 文件在服务器修改时间,
   int serverMTime;
   int share;
-  int size;
   int unlist;
 
   BdDiskFile.fromJson(Map<String, dynamic> json) {

@@ -17,6 +17,7 @@ class BdDiskApiClient {
 
   get accessToken async {
     var token = await AppConfig.instance.token;
+    if (token == null) AppConfig.instance.navigatorKey.currentState.pushNamedAndRemoveUntil("/Login", (route) => false);
     return token.accessToken;
   }
 

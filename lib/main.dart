@@ -42,6 +42,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       initialRoute: '/',
+      navigatorKey: AppConfig.instance.navigatorKey,
       routes: {
         /**
          * 命名导航路由，启动程序默认打开的是以'/'对应的界面LoginScreen()

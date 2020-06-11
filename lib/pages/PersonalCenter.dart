@@ -28,8 +28,6 @@ class Choice {
 }
 
 const List<Choice> choices = const <Choice>[
-  const Choice("car", title: 'Car', icon: Icons.directions_car),
-  const Choice("bicycle", title: 'Bicycle', icon: Icons.directions_bike),
   const Choice("exit", title: '退出', icon: Icons.exit_to_app),
 ];
 
@@ -170,28 +168,25 @@ class _PersonalCenterState extends State<PersonalCenter> {
     return Scaffold(
       appBar: AppBar(
         actions: <Widget>[
-          // action button
-          IconButton(
-            icon: Icon(choices[0].icon),
-            onPressed: () {
-              _select(choices[0]);
-            },
-          ),
-          // action button
-          IconButton(
-            icon: Icon(choices[1].icon),
-            onPressed: () {
-              _select(choices[1]);
-            },
-          ),
-          // overflow menu
           PopupMenuButton<Choice>(
             onSelected: _select,
             itemBuilder: (BuildContext context) {
-              return choices.skip(2).map((Choice choice) {
+              return choices.map((Choice choice) {
                 return PopupMenuItem<Choice>(
                   value: choice,
-                  child: Text(choice.title),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(
+                        choice.icon,
+                        size: 24,
+                        color: Colors.blue,
+                      ),
+                      SizedBox(
+                        width: 10,
+                      ),
+                      Text(choice.title),
+                    ],
+                  ),
                 );
               }).toList();
             },
