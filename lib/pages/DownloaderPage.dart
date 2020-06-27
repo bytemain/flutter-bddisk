@@ -3,10 +3,13 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
 
+import 'package:bddisk/helpers/Download.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
+
+import '../AppConfig.dart';
 
 class DownloaderPage extends StatefulWidget with WidgetsBindingObserver {
   final TargetPlatform platform;
@@ -18,15 +21,29 @@ class DownloaderPage extends StatefulWidget with WidgetsBindingObserver {
 }
 
 class _DownloaderPageState extends State<DownloaderPage> {
+  final _documents = [
+    {
+      'name': 'Android Programming Cookbook',
+      'link': 'http://enos.itcollege.ee/~jpoial/allalaadimised/reading/Android-Programming-Cookbook.pdf'
+    },
+    {
+      "name": "酷安",
+      "link":
+          "http://dl-cdn.coolapkmarket.com/down/apk_upload/2020/0616/47d9131d79e3c8dd120c3c9abd23896b-0-o_1eatiisd313h51j8c129f1e1ri5h6-uid-408649.apk?_upt=1600a78d1593274347"
+    }
+  ];
+
   final _images = [
     {
-      'name': 'wKgAYVput8CAPnPWAAF3oKDVY4Q703.jpg',
-      'link': 'http://acm.swust.edu.cn/group1/M00/00/10/wKgAYVput8CAPnPWAAF3oKDVY4Q703.jpg'
+      'name': 'Gates of the Arctic National Park and Preserve',
+      'link': 'https://upload.wikimedia.org/wikipedia/commons/e/e4/GatesofArctic.jpg'
     },
-    {
-      'name': '/union/document/basic#%E4%B8%8B%E8%BD%BD%E6%8E%A5%E5%8F%A3',
-      'link': 'https://pan.baidu.com/union/document/basic#%E4%B8%8B%E8%BD%BD%E6%8E%A5%E5%8F%A3'
-    },
+    {'name': 'OJ首页图片1', 'link': 'http://acm.swust.edu.cn/group1/M00/00/10/wKgAYVput8CAPnPWAAF3oKDVY4Q703.jpg'},
+    {'name': 'OJ首页图片2', 'link': 'http://acm.swust.edu.cn/group1/M00/00/10/wKgAYVput8eATUyuAAEfYra_GG4797.jpg'}
+  ];
+
+  final _videos = [
+    {'name': 'Big Buck Bunny', 'link': 'http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4'},
   ];
 
   List<_TaskInfo> _tasks;
@@ -42,7 +59,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
 
     _bindBackgroundIsolate();
 
-    FlutterDownloader.registerCallback(downloadCallback);
+    FlutterDownloader.registerCallback(downloadCallback, stepSize: 1);
 
     _isLoading = true;
     _permissionReady = false;
@@ -69,7 +86,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
       DownloadTaskStatus status = data[1];
       int progress = data[2];
 
-      final task = _tasks?.firstWhere((task) => task.taskId == id);
+      final task = _taskPool[id];
       if (task != null) {
         setState(() {
           task.status = status;
@@ -84,7 +101,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
   }
 
   static void downloadCallback(String id, DownloadTaskStatus status, int progress) {
-    print('Background Isolate Callback: task ($id) is in status ($status) and process ($progress)');
+    print('Background Isolate Callback: task: ($id) status: (${judgeDownloadStatus(status)}) progress: ($progress)');
     final SendPort send = IsolateNameServer.lookupPortByName('downloader_send_port');
     send.send([id, status, progress]);
   }
@@ -93,20 +110,19 @@ class _DownloaderPageState extends State<DownloaderPage> {
   Widget build(BuildContext context) {
     return new Scaffold(
       appBar: new AppBar(
-        title: new Text("下载"),
+        title: new Text("Download"),
       ),
       body: Builder(
-        builder: (context) => _isLoading
-            ? new Center(
-                child: new CircularProgressIndicator(),
-              )
-            : _permissionReady
-                ? new Container(
-                    child: new ListView(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      children: _items
-                          .map(
-                            (item) => item.task == null
+          builder: (context) => _isLoading
+              ? new Center(
+                  child: new CircularProgressIndicator(),
+                )
+              : _permissionReady
+                  ? new Container(
+                      child: new ListView(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        children: _items
+                            .map((item) => item.task == null
                                 ? new Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                                     child: Text(
@@ -122,7 +138,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
                                               _openDownloadedFile(item.task).then((success) {
                                                 if (!success) {
                                                   Scaffold.of(context)
-                                                      .showSnackBar(SnackBar(content: Text('无法打开该文件。')));
+                                                      .showSnackBar(SnackBar(content: Text('Cannot open this file')));
                                                 }
                                               });
                                             }
@@ -164,46 +180,43 @@ class _DownloaderPageState extends State<DownloaderPage> {
                                         ].where((child) => child != null).toList(),
                                       ),
                                     ),
-                                  ),
-                          )
-                          .toList(),
-                    ),
-                  )
-                : new Container(
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                            child: Text(
-                              'Please grant accessing storage permission to continue -_-',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.blueGrey, fontSize: 18.0),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 32.0,
-                          ),
-                          FlatButton(
-                            onPressed: () {
-                              _checkPermission().then((hasGranted) {
-                                setState(() {
-                                  _permissionReady = hasGranted;
-                                });
-                              });
-                            },
-                            child: Text(
-                              'Retry',
-                              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20.0),
-                            ),
-                          )
-                        ],
+                                  ))
+                            .toList(),
                       ),
-                    ),
-                  ),
-      ),
+                    )
+                  : new Container(
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                              child: Text(
+                                'Please grant accessing storage permission to continue -_-',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.blueGrey, fontSize: 18.0),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 32.0,
+                            ),
+                            FlatButton(
+                                onPressed: () {
+                                  _checkPermission().then((hasGranted) {
+                                    setState(() {
+                                      _permissionReady = hasGranted;
+                                    });
+                                  });
+                                },
+                                child: Text(
+                                  'Retry',
+                                  style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20.0),
+                                ))
+                          ],
+                        ),
+                      ),
+                    )),
     );
   }
 
@@ -213,11 +226,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
         onPressed: () {
           _requestDownload(task);
         },
-        child: Row(
-          children: <Widget>[
-            Icon(Icons.file_download),
-          ],
-        ),
+        child: new Icon(Icons.file_download),
         shape: new CircleBorder(),
         constraints: new BoxConstraints(minHeight: 32.0, minWidth: 32.0),
       );
@@ -226,14 +235,9 @@ class _DownloaderPageState extends State<DownloaderPage> {
         onPressed: () {
           _pauseDownload(task);
         },
-        child: Row(
-          children: <Widget>[
-            new Icon(
-              Icons.pause,
-              color: Colors.red,
-            ),
-            Text("pause"),
-          ],
+        child: new Icon(
+          Icons.pause,
+          color: Colors.red,
         ),
         shape: new CircleBorder(),
         constraints: new BoxConstraints(minHeight: 32.0, minWidth: 32.0),
@@ -243,14 +247,9 @@ class _DownloaderPageState extends State<DownloaderPage> {
         onPressed: () {
           _resumeDownload(task);
         },
-        child: Row(
-          children: <Widget>[
-            new Icon(
-              Icons.play_arrow,
-              color: Colors.green,
-            ),
-            Text("pause"),
-          ],
+        child: new Icon(
+          Icons.play_arrow,
+          color: Colors.green,
         ),
         shape: new CircleBorder(),
         constraints: new BoxConstraints(minHeight: 32.0, minWidth: 32.0),
@@ -298,23 +297,12 @@ class _DownloaderPageState extends State<DownloaderPage> {
           )
         ],
       );
-    } else if (task.status == DownloadTaskStatus.enqueued) {
+    } else {
       return Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          new Text('enqueued', style: new TextStyle(color: Colors.red)),
-          RawMaterialButton(
-            onPressed: () {
-              _retryDownload(task);
-            },
-            child: Icon(
-              Icons.refresh,
-              color: Colors.green,
-            ),
-            shape: new CircleBorder(),
-            constraints: new BoxConstraints(minHeight: 32.0, minWidth: 32.0),
-          ),
+          Text(judgeDownloadStatus(task.status), style: new TextStyle(color: Colors.grey)),
           RawMaterialButton(
             onPressed: () {
               _delete(task);
@@ -328,20 +316,13 @@ class _DownloaderPageState extends State<DownloaderPage> {
           )
         ],
       );
-    } else {
-      print(task.status);
-      return Text("unknown status");
     }
   }
 
   void _requestDownload(_TaskInfo task) async {
-    print(task.link);
     task.taskId = await FlutterDownloader.enqueue(
-        url: task.link,
-        headers: {"auth": "test_for_sql_encoding"},
-        savedDir: _localPath,
-        showNotification: true,
-        openFileFromNotification: true);
+        url: task.link, savedDir: _localPath, showNotification: true, openFileFromNotification: true);
+    _taskPool[task.taskId] = task;
   }
 
   void _cancelDownload(_TaskInfo task) async {
@@ -373,22 +354,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
   }
 
   Future<bool> _checkPermission() async {
-    if (widget.platform == TargetPlatform.android) {
-//      return await Permission.storage.request().isGranted;
-      Permission.storage.request().isGranted.then((value) {
-        print("storage permission: $value");
-        if (value) {
-          return true;
-        } else {
-          Permission.storage.isPermanentlyDenied.then((value) {
-            if (value) openAppSettings();
-          });
-          return false;
-        }
-      });
-    } else {
-      return true;
-    }
+    return AppConfig.instance.requestPermissions();
   }
 
   Future<Null> _prepare() async {
@@ -398,9 +364,25 @@ class _DownloaderPageState extends State<DownloaderPage> {
     _tasks = [];
     _items = [];
 
+    _tasks.addAll(_documents.map((document) => _TaskInfo(name: document['name'], link: document['link'])));
+
+    _items.add(_ItemHolder(name: 'Documents'));
+    for (int i = count; i < _tasks.length; i++) {
+      _items.add(_ItemHolder(name: _tasks[i].name, task: _tasks[i]));
+      count++;
+    }
+
     _tasks.addAll(_images.map((image) => _TaskInfo(name: image['name'], link: image['link'])));
 
     _items.add(_ItemHolder(name: 'Images'));
+    for (int i = count; i < _tasks.length; i++) {
+      _items.add(_ItemHolder(name: _tasks[i].name, task: _tasks[i]));
+      count++;
+    }
+
+    _tasks.addAll(_videos.map((video) => _TaskInfo(name: video['name'], link: video['link'])));
+
+    _items.add(_ItemHolder(name: 'Videos'));
     for (int i = count; i < _tasks.length; i++) {
       _items.add(_ItemHolder(name: _tasks[i].name, task: _tasks[i]));
       count++;
@@ -421,10 +403,9 @@ class _DownloaderPageState extends State<DownloaderPage> {
     _localPath = (await _findLocalPath()) + Platform.pathSeparator + 'Download';
 
     final savedDir = Directory(_localPath);
-    print("_localPath" + _localPath);
+    print("_localPath $_localPath");
     bool hasExisted = await savedDir.exists();
     if (!hasExisted) {
-      print("create dir");
       savedDir.create();
     }
 
@@ -442,13 +423,15 @@ class _DownloaderPageState extends State<DownloaderPage> {
 class _TaskInfo {
   final String name;
   final String link;
-
+  final CancelToken cancelToken;
   String taskId;
   int progress = 0;
   DownloadTaskStatus status = DownloadTaskStatus.undefined;
 
-  _TaskInfo({this.name, this.link});
+  _TaskInfo({this.name, this.link}) : this.cancelToken = CancelToken();
 }
+
+Map<String, _TaskInfo> _taskPool = {};
 
 class _ItemHolder {
   final String name;

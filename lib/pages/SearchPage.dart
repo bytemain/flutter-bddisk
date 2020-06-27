@@ -2,7 +2,7 @@ import 'package:bddisk/Constant.dart';
 import 'package:bddisk/components/FilesList.dart';
 import 'package:bddisk/components/SearchHistoryWidget.dart';
 import 'package:bddisk/components/SearchInput.dart';
-import 'package:bddisk/helpers/DbHelper.dart';
+import 'package:bddisk/helpers/SearchHistoryDbHelper.dart';
 import 'package:bddisk/models/BdDiskFile.dart';
 import 'package:bddisk/models/BdDiskFileStore.dart';
 import 'package:bddisk/models/SearchHistory.dart';
@@ -36,7 +36,7 @@ class _SearchPageState extends State<SearchPage> {
       setState(() {
         _searchKeyword = widget.searchKeyword;
       });
-    DbHelper.instance.queryAll().then((value) => setState(() => _historyWords = value));
+    SearchHistoryDbHelper.queryAll().then((value) => setState(() => _historyWords = value));
   }
 
   void _onSearchInputSubmit(String value) {
@@ -83,13 +83,13 @@ class _SearchPageState extends State<SearchPage> {
   void _onSearchHistoryEvent(SearchHistoryEvent event, SearchHistory history) {
     switch (event) {
       case SearchHistoryEvent.insert:
-        DbHelper.instance.insert(history).then((value) => setState(() => _historyWords.insert(0, value)));
+        SearchHistoryDbHelper.insert(history).then((value) => setState(() => _historyWords.insert(0, value)));
         break;
       case SearchHistoryEvent.delete:
-        DbHelper.instance.deleteById(history?.id).then((value) => setState(() => _historyWords.remove(history)));
+        SearchHistoryDbHelper.deleteById(history?.id).then((value) => setState(() => _historyWords.remove(history)));
         break;
       case SearchHistoryEvent.clear:
-        DbHelper.instance.deleteAll().then((value) => setState(() => _historyWords.clear()));
+        SearchHistoryDbHelper.deleteAll().then((value) => setState(() => _historyWords.clear()));
         break;
       case SearchHistoryEvent.search:
         _onSearchInputSubmit(history?.keyword);

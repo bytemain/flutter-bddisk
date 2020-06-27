@@ -1,4 +1,5 @@
 import 'package:bddisk/helpers/Prefs.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Constant.dart';
@@ -40,5 +41,17 @@ class AppConfig {
     var json = prefs.getJson(Constant.keyBdOAuth2Token);
     _bdOAuth2Token = BdOAuth2Token.fromJSON(json);
     return _bdOAuth2Token;
+  }
+
+  Future<bool> requestPermissions() async {
+    bool isGranted = await Permission.storage.request().isGranted;
+    if (isGranted) {
+      return true;
+    } else {
+      if (await Permission.storage.isPermanentlyDenied) {
+        openAppSettings();
+      }
+      return false;
+    }
   }
 }

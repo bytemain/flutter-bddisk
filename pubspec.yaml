@@ -18,8 +18,10 @@ dependencies:
   path_provider: ^1.6.8
   permission_handler: ^5.0.0+hotfix.6
   webview_flutter: ^0.3.22+1
-  flutter_downloader: ^1.4.4
-
+  flutter_downloader:
+    path: ../flutter_downloader
+  dio: ^3.0.9
+  workmanager: ^0.2.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

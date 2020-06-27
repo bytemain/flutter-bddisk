@@ -1,3 +1,5 @@
+import 'package:bddisk/Constant.dart';
+
 class SearchHistory {
   int id;
   String keyword;
@@ -7,13 +9,13 @@ class SearchHistory {
 
   Map<String, dynamic> toMap() {
     var map = <String, dynamic>{
-      "keyword": this.keyword,
-      "time": this.time ?? DateTime.now().millisecondsSinceEpoch,
+      SearchHistoryContract.COLUMN_KEYWORD: this.keyword,
+      SearchHistoryContract.COLUMN_TIME: this.time ?? DateTime.now().millisecondsSinceEpoch,
     };
-    if (this.id != null) map['id'] = this.id;
+    if (this.id != null) map[SearchHistoryContract.COLUMN_ID] = this.id;
     return map;
   }
 
-  static SearchHistory fromMap(Map<String, dynamic> map) =>
-      SearchHistory(map["keyword"], id: map["id"], time: map["time"]);
+  static SearchHistory fromMap(Map<String, dynamic> map) => SearchHistory(map[SearchHistoryContract.COLUMN_KEYWORD],
+      id: map[SearchHistoryContract.COLUMN_ID], time: map[SearchHistoryContract.COLUMN_TIME]);
 }

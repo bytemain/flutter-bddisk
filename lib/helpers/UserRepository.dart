@@ -44,14 +44,18 @@ class UserRepository {
     return quota;
   }
 
-  /// 获取网盘信息，网络异常时，返回缓存信息
   Future<Map<String, dynamic>> logout() async {
     var prefs = await _prefs;
 
+    // 请求百度接口，销毁 token
     Map response = await apiClient.logout();
+
+    // 清除本地保存的数据
     prefs.remove(Constant.keyBdOAuth2Token);
     prefs.remove(Constant.keyDiskQuota);
     prefs.remove(Constant.keyUserInfo);
+
+    // 移除 token
     AppConfig.instance.setToken(null);
     return response;
   }
