@@ -1,4 +1,4 @@
-import 'package:bddisk/pages/PathPage.dart';
+import 'package:bddisk/helpers/LazyIndexedStack.dart';
 import 'package:flutter/material.dart';
 
 import 'DownloaderPage.dart';
@@ -16,9 +16,9 @@ class _HomeState extends State<Home> {
   int _selectedIndex = 0;
   final List<Widget> _widgetOptions = <Widget>[
     FilesPage(),
-    PersonalCenter(),
     DownloaderPage(),
-    PathProviderPage(title: 'Path Provider')
+//    PathProviderPage(title: 'Path Provider'),
+    PersonalCenter(),
   ];
   final List<BottomNavigationBarItem> _bottomNavigationBarItem = <BottomNavigationBarItem>[
     BottomNavigationBarItem(
@@ -26,16 +26,16 @@ class _HomeState extends State<Home> {
       title: Text('文件'),
     ),
     BottomNavigationBarItem(
-      icon: Icon(Icons.person),
-      title: Text('我的'),
-    ),
-    BottomNavigationBarItem(
       icon: Icon(Icons.file_download),
       title: Text('下载'),
     ),
+//    BottomNavigationBarItem(
+//      icon: Icon(Icons.show_chart),
+//      title: Text('Path'),
+//    ),
     BottomNavigationBarItem(
-      icon: Icon(Icons.show_chart),
-      title: Text('Path'),
+      icon: Icon(Icons.person),
+      title: Text('我的'),
     ),
   ];
 
@@ -53,7 +53,7 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
+      body: LazyIndexedStack(
         index: _selectedIndex,
         children: _widgetOptions,
       ),
