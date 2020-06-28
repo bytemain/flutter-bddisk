@@ -8,25 +8,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import '../Constant.dart';
+
 class PersonalCenter extends StatefulWidget {
-  UserRepository userRepository;
+  final UserRepository userRepository;
 
   PersonalCenter({UserRepository userRepository}) : this.userRepository = userRepository ?? UserRepository();
 
   @override
   _PersonalCenterState createState() => _PersonalCenterState();
-}
-
-class Choice {
-  const Choice(
-    this.key, {
-    this.title,
-    this.icon,
-  });
-
-  final String key;
-  final String title;
-  final IconData icon;
 }
 
 const List<Choice> choices = const <Choice>[
@@ -59,7 +49,7 @@ class _PersonalCenterState extends State<PersonalCenter> {
             children: <Widget>[
               ClipOval(
                 child: Container(
-                  margin: EdgeInsets.only(right: 10),
+                  alignment: Alignment.center,
                   child: FadeInImage.assetNetwork(
                     placeholder: 'assets/swan_app_user_portrait_pressed.png',
                     image: _bdDiskUser?.avatarUrl ??
@@ -69,6 +59,9 @@ class _PersonalCenterState extends State<PersonalCenter> {
                     height: 60,
                   ),
                 ),
+              ),
+              SizedBox(
+                width: 20,
               ),
               Expanded(
                 child: Column(

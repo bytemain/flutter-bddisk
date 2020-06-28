@@ -113,7 +113,7 @@ packages:
       name: get
       url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub"
     source: hosted
-    version: "2.14.1"
+    version: "3.1.0"
   http_parser:
     dependency: transitive
     description:

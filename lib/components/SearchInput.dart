@@ -5,18 +5,16 @@ typedef SearchInputOnSubmittedCallback = void Function(String value);
 typedef SearchInputOnChanged = void Function(String value);
 typedef SearchInputOnClear = void Function();
 
-// ignore: must_be_immutable
 class SearchInputWidget extends StatefulWidget {
-  SearchInputOnFocusCallback onTap;
-  SearchInputOnSubmittedCallback onSubmitted;
-  SearchInputOnChanged onChanged;
-  SearchInputOnClear onClear;
-  String text;
-  TextEditingController controller;
+  final SearchInputOnFocusCallback onTap;
+  final SearchInputOnSubmittedCallback onSubmitted;
+  final SearchInputOnChanged onChanged;
+  final SearchInputOnClear onClear;
+  final TextEditingController controller;
 
-  bool readOnly;
-  bool showCursor;
-  bool autofocus;
+  final bool readOnly;
+  final bool showCursor;
+  final bool autofocus;
 
   SearchInputWidget({
     this.controller,

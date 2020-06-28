@@ -87,6 +87,7 @@ class _BdOAuth2PageState extends State<BdOAuth2Page> {
                 setState(() {
                   isLoading = true;
                 });
+                Get.rawSnackbar(message: "正在登录");
                 if (_checkOAuth2Result(context, url)) {
                   return NavigationDecision.prevent;
                 }
@@ -132,7 +133,7 @@ class _BdOAuth2PageState extends State<BdOAuth2Page> {
   @override
   void didUpdateWidget(BdOAuth2Page oldWidget) {
     super.didUpdateWidget(oldWidget);
-    print("widget" + widget.LoginUrl);
-    print("oldWidget" + oldWidget.LoginUrl);
+    print("widget： ${widget.LoginUrl}");
+    print("oldWidget: ${oldWidget.LoginUrl}");
   }
 }

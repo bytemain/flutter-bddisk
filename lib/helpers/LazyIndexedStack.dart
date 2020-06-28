@@ -31,7 +31,7 @@ class _LazyIndexedStackState extends State<LazyIndexedStack> {
   void initState() {
     _loaded = [];
     _children = [];
-    for (int i = 0; i < widget.children.length; ++i) {
+    for (int i = 0; i < widget.children.length; i++) {
       if (i == widget.index) {
         _children.add(widget.children[i]);
         _loaded.add(true);
@@ -45,7 +45,8 @@ class _LazyIndexedStackState extends State<LazyIndexedStack> {
 
   @override
   void didUpdateWidget(LazyIndexedStack oldWidget) {
-    for (int i = 0; i < widget.children.length; ++i) {
+    if (oldWidget.index == widget.index) return;
+    for (int i = 0; i < widget.children.length; i++) {
       if (i == widget.index) {
         if (!_loaded[i]) {
           _children[i] = widget.children[i];

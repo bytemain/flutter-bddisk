@@ -9,7 +9,7 @@ import 'AppConfig.dart';
 
 void callbackDispatcher() {
   Workmanager.executeTask((task, inputData) {
-    print("Native called background task: $task"); //simpleTask will be emitted here.
+    print("Native called background task: $task");
     print("inputData: $inputData");
     return Future.value(true);
   });
@@ -17,19 +17,9 @@ void callbackDispatcher() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Workmanager.initialize(callbackDispatcher, // The top level function, aka callbackDispatcher
-      isInDebugMode:
-          true // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-      );
+  Workmanager.initialize(callbackDispatcher, isInDebugMode: false);
   Workmanager.registerOneOffTask("1", "simpleTask");
-  // Periodic task registration
-  Workmanager.registerPeriodicTask(
-    "2",
-    "simplePeriodicTask",
-    // When no frequency is provided the default 15 minutes is set.
-    // Minimum frequency is 15 min. Android will automatically change your frequency to 15 min if you have configured a lower frequency.
-    frequency: Duration(seconds: 11),
-  );
+  await AppConfig.instance.requestNotificationPermissions();
   await FlutterDownloader.initialize(debug: true);
   runApp(MyApp());
 }

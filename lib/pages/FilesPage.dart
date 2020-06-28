@@ -4,11 +4,13 @@ import 'package:bddisk/Constant.dart';
 import 'package:bddisk/components/FilesList.dart';
 import 'package:bddisk/components/SearchInput.dart';
 import 'package:bddisk/helpers/BdDiskApiClient.dart';
+import 'package:bddisk/helpers/DownloadRepository.dart';
 import 'package:bddisk/helpers/Utils.dart';
 import 'package:bddisk/models/BdDiskFile.dart';
 import 'package:bddisk/models/BdDiskFileStore.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
 
 import 'SearchPage.dart';
@@ -82,7 +84,25 @@ class _FilesPageState extends State<FilesPage> {
                           FlatButton(
                             child: const Text('下载'),
                             onPressed: () {
-                              /* ... */
+                              DownloadRepository.instance
+                                  .enqueue(TaskInfo(name: '${diskFile.serverFilename}', link: diskFile.dLink));
+                              Get.rawSnackbar(
+                                message: "开始下载~",
+                                onTap: (GetBar snack) {
+                                  snack.show();
+                                },
+                                shouldIconPulse: true,
+                                mainButton: FlatButton(
+                                  child: Text(
+                                    "查看",
+                                    style: TextStyle(color: Colors.lightBlue, fontSize: 14),
+                                  ),
+                                  onPressed: () {
+                                    Get.toNamed("/Home?index=1");
+                                  },
+                                ),
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
                             },
                           ),
                         ],

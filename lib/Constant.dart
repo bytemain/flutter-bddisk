@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 class Constant {
   static final String keyUserInfo = 'json_user_info';
   static final String keyDiskQuota = 'json_disk_quota';
@@ -18,13 +20,22 @@ class SearchHistoryContract {
 
 class DownloadContract {
   static final String TABLE_NAME = "download";
-  static final String COLUMN_TASK_ID = "id";
-  static final String COLUMN_STATUS = "status";
-  static final String COLUMN_URL = "url";
-  static final String COLUMN_SAVED_DIR = "saved_dir";
-  static final String COLUMN_FILE_NAME = "file_name";
-  static final String COLUMN_TIME_CREATED = "time_created";
+  static final String COLUMN_ID = "id";
+  static final String COLUMN_TASK_ID = "task_id";
+  static final String COLUMN_REMARKS = "remarks";
 }
 
 enum FilesState { loading, loaded, fail }
 enum SearchState { typing, loading, done, empty, fail }
+
+class Choice {
+  const Choice(
+    this.key, {
+    this.title,
+    this.icon,
+  });
+
+  final String key;
+  final String title;
+  final IconData icon;
+}
