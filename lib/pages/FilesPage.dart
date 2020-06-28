@@ -38,6 +38,8 @@ class _FilesPageState extends State<FilesPage> {
   String _failMsg = '';
   FilesState _filesState = FilesState.loaded;
 
+  Map<String, dynamic> _map;
+
   Future<bool> _onBackParentDir() {
     if (widget.rootPath.compareTo(_currPath) == 0 && widget.allowPop) {
       Navigator.of(context).pop();
@@ -60,52 +62,69 @@ class _FilesPageState extends State<FilesPage> {
           MaterialPageRoute(
             builder: (context) => Scaffold(
               appBar: AppBar(title: Text('${diskFile.serverFilename}')),
+              floatingActionButton: FloatingActionButton(
+                onPressed: () {
+                  DownloadRepository.instance
+                      .enqueue(TaskInfo(name: '${diskFile.serverFilename}', link: diskFile.dLink));
+                  Get.rawSnackbar(
+                    message: "开始下载~",
+                    onTap: (GetBar snack) {
+                      snack.show();
+                    },
+                    shouldIconPulse: true,
+                    mainButton: FlatButton(
+                      child: Text(
+                        "查看",
+                        style: TextStyle(color: Colors.lightBlue, fontSize: 14),
+                      ),
+                      onPressed: () {
+                        Get.toNamed("/Home?index=1");
+                      },
+                    ),
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                },
+                child: Icon(Icons.cloud_download),
+                backgroundColor: Colors.green,
+              ),
               body: Center(
-                child: Card(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                child: SingleChildScrollView(
+                  child: Wrap(
                     children: <Widget>[
                       ListTile(
-                        leading: Icon(Icons.album),
+                        leading: Icon(Icons.local_play),
                         title: Text('${diskFile.path}'),
-                        subtitle: Column(
-                          children: <Widget>[
-                            Text('创建时间：${Utils.getDataTime(diskFile.serverCTime)}'),
-                            Text('修改时间：${Utils.getDataTime(diskFile.serverMTime)}'),
-                            Text('文件大小：' + filesize(diskFile.size ?? 0)),
-                            Text('下载链接：${diskFile.dLink}'),
-                            Text('分类：${diskFile.category}'),
-                            Text('文件md5：${diskFile.md5}'),
-                          ],
-                        ),
                       ),
-                      ButtonBar(
-                        children: <Widget>[
-                          FlatButton(
-                            child: const Text('下载'),
-                            onPressed: () {
-                              DownloadRepository.instance
-                                  .enqueue(TaskInfo(name: '${diskFile.serverFilename}', link: diskFile.dLink));
-                              Get.rawSnackbar(
-                                message: "开始下载~",
-                                onTap: (GetBar snack) {
-                                  snack.show();
-                                },
-                                shouldIconPulse: true,
-                                mainButton: FlatButton(
-                                  child: Text(
-                                    "查看",
-                                    style: TextStyle(color: Colors.lightBlue, fontSize: 14),
-                                  ),
-                                  onPressed: () {
-                                    Get.toNamed("/Home?index=1");
-                                  },
-                                ),
-                                snackPosition: SnackPosition.BOTTOM,
-                              );
-                            },
-                          ),
-                        ],
+                      ListTile(
+                        leading: Icon(Icons.access_time),
+                        title: Text("创建时间："),
+                        subtitle: Text("${Utils.getDataTime(diskFile.serverCTime)}"),
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.access_time),
+                        title: Text("修改时间："),
+                        subtitle: Text("${Utils.getDataTime(diskFile.serverMTime)}"),
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.insert_drive_file),
+                        title: Text("文件大小："),
+                        subtitle: Text(filesize(diskFile.size ?? 0)),
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.link),
+                        title: Text("下载链接："),
+                        subtitle: Text("${diskFile.dLink}"),
+                        isThreeLine: true,
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.apps),
+                        title: Text("分类："),
+                        subtitle: Text("${diskFile.category}"),
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.confirmation_number),
+                        title: Text("文件md5："),
+                        subtitle: Text("${diskFile.md5}"),
                       ),
                     ],
                   ),
@@ -140,8 +159,12 @@ class _FilesPageState extends State<FilesPage> {
   }
 
   Future<void> _requestFiles() async {
+    var map = await DownloadRepository.instance.tasksMap;
+    print("map:");
+    print(map);
     setState(() {
       _filesState = FilesState.loading;
+      _map = map;
     });
 
     widget.fileStore.list(_currPath).then((files) {
@@ -170,7 +193,11 @@ class _FilesPageState extends State<FilesPage> {
           children: <Widget>[SizedBox(height: 200), CircularProgressIndicator(strokeWidth: 4.0), Text("正在加载")],
         );
       case FilesState.loaded:
-        return FileListWidget(_diskFiles, onFileTap: _onFileTap);
+        return FileListWidget(
+          _diskFiles,
+          onFileTap: _onFileTap,
+          map: _map,
+        );
       case FilesState.fail:
         return Column(
           children: <Widget>[

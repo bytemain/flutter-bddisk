@@ -1,3 +1,4 @@
+import 'package:bddisk/helpers/Download.dart';
 import 'package:bddisk/models/BdDiskFile.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
@@ -10,11 +11,12 @@ typedef FileOnTapCallback = void Function(BdDiskFile file);
 class FileListWidget extends StatelessWidget {
   var diskFiles = List<BdDiskFile>();
   FileOnTapCallback onFileTap;
+  Map<String, dynamic> map;
 
   @override
   Widget build(BuildContext context) => _buildFilesWidget();
 
-  FileListWidget(this.diskFiles, {this.onFileTap});
+  FileListWidget(this.diskFiles, {this.onFileTap, this.map});
 
   Widget _buildFolderItem(BdDiskFile file) {
     return InkWell(
@@ -22,7 +24,11 @@ class FileListWidget extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 0.5, color: Color(0xffe5e5e5)))),
         child: ListTile(
-          leading: Image.asset("assets/folder.png"),
+          leading: Image.asset(
+            "assets/folder.png",
+            width: 40,
+            height: 40,
+          ),
           title: Row(
             children: <Widget>[
               Expanded(
@@ -42,13 +48,28 @@ class FileListWidget extends StatelessWidget {
     );
   }
 
+  Widget renderTrailingIcon(BdDiskFile file) {
+    print("this.map:");
+    print(this.map);
+    if (this.map != null && this.map.containsKey(file.serverFilename)) {
+      return Text(judgeDownloadStatus(map[file.serverFilename].status), style: new TextStyle(color: Colors.grey));
+    }
+    return Icon(
+      Icons.cloud_queue,
+    );
+  }
+
   Widget _buildFileItem(BdDiskFile file) {
     return InkWell(
       child: Container(
         alignment: Alignment.center,
         decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 0.5, color: Color(0xffe5e5e5)))),
         child: ListTile(
-          leading: Image.asset("assets/file.png"),
+          leading: Image.asset(
+            "assets/file.png",
+            width: 40,
+            height: 40,
+          ),
           title: Row(
             children: <Widget>[
               Expanded(
@@ -59,6 +80,7 @@ class FileListWidget extends StatelessWidget {
           subtitle: Text(
             Utils.getDataTime(file.serverCTime) + "  " + filesize(file.size),
           ),
+          trailing: renderTrailingIcon(file),
         ),
       ),
       onTap: () {

@@ -47,6 +47,7 @@ class _HomeState extends State<Home> {
         int number = int.parse(Get.parameters["index"]);
         if (number >= 0 && number <= _bottomNavigationBarItem.length) _selectedIndex = number;
       });
+      Get.parameters.remove("index");
     }
   }
 

@@ -27,6 +27,20 @@ class DownloadRepository {
     return await FlutterDownloader.loadTasks();
   }
 
+  Future<Map<String, dynamic>> get tasksMap async {
+    var tasks = await FlutterDownloader.loadTasks();
+    print("tasks");
+    print(tasks);
+    Map<String, dynamic> maps = {};
+    tasks.forEach((e) {
+      print(e);
+      maps[e.filename] = e;
+    });
+    print("tasksMap");
+    print(maps);
+    return maps;
+  }
+
   void init() async {
     _localPath = (await _findLocalPath()) + Platform.pathSeparator + 'Download';
 
@@ -87,6 +101,7 @@ class TaskInfo {
   int progress = 0;
   DownloadTaskStatus status = DownloadTaskStatus.undefined;
   DownloadTask downloadTask;
+
   TaskInfo({this.name, this.link});
 
   TaskInfo.fromDownloadTask(
