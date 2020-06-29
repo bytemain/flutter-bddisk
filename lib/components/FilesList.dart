@@ -21,7 +21,7 @@ class FileListWidget extends StatelessWidget {
   Widget _buildFolderItem(BdDiskFile file) {
     return InkWell(
       child: Container(
-        alignment: Alignment.center,
+        alignment: Alignment.centerLeft,
         decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 0.5, color: Color(0xffe5e5e5)))),
         child: ListTile(
           leading: Image.asset(
@@ -49,8 +49,6 @@ class FileListWidget extends StatelessWidget {
   }
 
   Widget renderTrailingIcon(BdDiskFile file) {
-    print("this.map:");
-    print(this.map);
     if (this.map != null && this.map.containsKey(file.serverFilename)) {
       return Text(judgeDownloadStatus(map[file.serverFilename].status), style: new TextStyle(color: Colors.grey));
     }
@@ -62,7 +60,6 @@ class FileListWidget extends StatelessWidget {
   Widget _buildFileItem(BdDiskFile file) {
     return InkWell(
       child: Container(
-        alignment: Alignment.center,
         decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 0.5, color: Color(0xffe5e5e5)))),
         child: ListTile(
           leading: Image.asset(

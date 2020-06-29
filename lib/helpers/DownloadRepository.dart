@@ -29,15 +29,11 @@ class DownloadRepository {
 
   Future<Map<String, dynamic>> get tasksMap async {
     var tasks = await FlutterDownloader.loadTasks();
-    print("tasks");
-    print(tasks);
     Map<String, dynamic> maps = {};
     tasks.forEach((e) {
       print(e);
       maps[e.filename] = e;
     });
-    print("tasksMap");
-    print(maps);
     return maps;
   }
 

@@ -41,7 +41,6 @@ class _HomeState extends State<Home> {
   }
 
   void handleShouldIndexChange() {
-    print(Get.parameters);
     if (Get.parameters.containsKey("index")) {
       setState(() {
         int number = int.parse(Get.parameters["index"]);

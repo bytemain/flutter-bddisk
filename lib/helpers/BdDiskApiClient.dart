@@ -57,7 +57,6 @@ class BdDiskApiClient {
 
     var responseBody = await response.transform(Utf8Decoder()).join();
     var json = jsonDecode(responseBody);
-    print(json);
     var list = (json["list"] as List<dynamic>);
     return list.map((e) => BdDiskFile.fromJSON(e)).toList();
   }

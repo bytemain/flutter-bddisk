@@ -101,11 +101,15 @@ class _SearchHistoryWidgetState extends State<SearchHistoryWidget> {
             ),
           ),
           Container(
-            child: ListView(
-              physics: ClampingScrollPhysics(),
-              shrinkWrap: true,
-              children: divided,
-            ),
+            child: divided.length == 0
+                ? Center(
+                    child: Text("暂无搜索历史"),
+                  )
+                : ListView(
+                    physics: ClampingScrollPhysics(),
+                    shrinkWrap: true,
+                    children: divided,
+                  ),
           ),
           _displayClearButton(),
         ],

@@ -1,24 +1,14 @@
 import 'package:bddisk/pages/BdOAuth2Page.dart';
 import 'package:bddisk/pages/Home.dart';
+import 'package:bddisk/pages/SettingsPage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:get/get.dart';
-import 'package:workmanager/workmanager.dart';
 
 import 'AppConfig.dart';
 
-void callbackDispatcher() {
-  Workmanager.executeTask((task, inputData) {
-    print("Native called background task: $task");
-    print("inputData: $inputData");
-    return Future.value(true);
-  });
-}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Workmanager.initialize(callbackDispatcher, isInDebugMode: false);
-  Workmanager.registerOneOffTask("1", "simpleTask");
   await AppConfig.instance.requestNotificationPermissions();
   await FlutterDownloader.initialize(debug: true);
   runApp(MyApp());
@@ -70,6 +60,11 @@ class MyApp extends StatelessWidget {
             name: '/Home',
             page: () {
               return Home();
+            }),
+        GetPage(
+            name: '/Settings',
+            page: () {
+              return SettingsPage();
             }),
       ],
     );

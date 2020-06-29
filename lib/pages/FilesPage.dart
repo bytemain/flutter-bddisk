@@ -160,8 +160,6 @@ class _FilesPageState extends State<FilesPage> {
 
   Future<void> _requestFiles() async {
     var map = await DownloadRepository.instance.tasksMap;
-    print("map:");
-    print(map);
     setState(() {
       _filesState = FilesState.loading;
       _map = map;
@@ -224,10 +222,11 @@ class _FilesPageState extends State<FilesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_currPath),
+        title: Text(_currPath == "/" ? "根目录" : _currPath),
         elevation: 0.0,
+        automaticallyImplyLeading: true,
         leading: _isAllowLeading()
-            ? Container()
+            ? null
             : IconButton(
                 icon: Icon(Icons.chevron_left, color: Colors.black),
                 onPressed: _onBackParentDir,
@@ -240,15 +239,18 @@ class _FilesPageState extends State<FilesPage> {
             child: SingleChildScrollView(
               physics: AlwaysScrollableScrollPhysics(),
               child: Container(
-                margin: EdgeInsets.only(left: 25, right: 25, top: 5),
+                margin: EdgeInsets.only(left: 10, right: 10, top: 5),
                 child: Column(
                   children: <Widget>[
                     Center(
-                      child: SearchInputWidget(
-                        autofocus: false,
-                        showCursor: false,
-                        readOnly: true,
-                        onTap: _onSearchInputTap,
+                      child: Container(
+                        margin: EdgeInsets.only(left: 10, right: 10, top: 5),
+                        child: SearchInputWidget(
+                          autofocus: false,
+                          showCursor: false,
+                          readOnly: true,
+                          onTap: _onSearchInputTap,
+                        ),
                       ),
                     ),
                     Center(child: _buildFilesWidget()),

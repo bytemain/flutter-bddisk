@@ -20,8 +20,9 @@ class PersonalCenter extends StatefulWidget {
 }
 
 const List<Choice> choices = const <Choice>[
-  const Choice("logout", title: '退出登录', icon: Icons.power_settings_new),
-  const Choice("exit", title: '退出应用', icon: Icons.exit_to_app),
+  const Choice("settings", title: '设置', icon: Icons.settings),
+  const Choice("logout", title: '退出登录', icon: Icons.exit_to_app),
+  const Choice("exit", title: '退出应用', icon: Icons.power_settings_new),
 ];
 
 class _PersonalCenterState extends State<PersonalCenter> {
@@ -102,35 +103,19 @@ class _PersonalCenterState extends State<PersonalCenter> {
   Widget _buildFunctionWidget() {
     return Container(
       child: Flexible(
-        child: GridView.count(
-            physics: NeverScrollableScrollPhysics(),
-            crossAxisCount: 4,
-            mainAxisSpacing: 8.0,
-            crossAxisSpacing: 8.0,
-            childAspectRatio: 4 / 5,
-            children: <String, String>{
-              'file_add_btn_scan.png': "扫一扫",
-              'file_add_btn_photo.png': "上传照片",
-              'file_add_btn_video.png': "上传视频",
-              'file_add_btn_note.png': "新建笔记",
-              'file_add_btn_file.png': "上传文档",
-              'file_add_btn_music.png': "上传音乐",
-              'file_add_btn_folder.png': "新建文件夹",
-              'file_add_btn_other.png': "上传其他文件",
-            }.entries.map((MapEntry entry) {
-              return Column(
-                children: <Widget>[
-                  Container(
-                    padding: const EdgeInsets.all(9),
-                    child: Image.asset(
-                      "assets/" + entry.key,
-                    ),
-                  ),
-                  Text(entry.value, style: TextStyle(fontSize: 11))
-                ],
-              );
-            }).toList()),
-      ),
+          child: Column(
+        children: choices.map((Choice choice) {
+          return ListTile(
+            leading: Icon(
+              choice.icon,
+              size: 24,
+              color: Colors.blue,
+            ),
+            title: Text(choice.title),
+            onTap: () => _select(choice),
+          );
+        }).toList(),
+      )),
     );
   }
 
@@ -138,7 +123,6 @@ class _PersonalCenterState extends State<PersonalCenter> {
     switch (choice.key) {
       case "logout":
         widget.userRepository.logout().then((value) {
-          print("logout:" + value.toString());
           if (value.containsKey("error_code")) {
             Scaffold.of(context).showSnackBar(
               SnackBar(content: Text('退出失败！' + value["error_msg"])),
@@ -165,6 +149,9 @@ class _PersonalCenterState extends State<PersonalCenter> {
           SystemChannels.platform.invokeMethod('SystemNavigator.pop');
         });
         break;
+      case "settings":
+        Get.toNamed("/Settings");
+        break;
     }
   }
 
@@ -172,32 +159,7 @@ class _PersonalCenterState extends State<PersonalCenter> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        actions: <Widget>[
-          PopupMenuButton<Choice>(
-            onSelected: _select,
-            itemBuilder: (BuildContext context) {
-              return choices.map((Choice choice) {
-                return PopupMenuItem<Choice>(
-                  value: choice,
-                  child: Row(
-                    children: <Widget>[
-                      Icon(
-                        choice.icon,
-                        size: 24,
-                        color: Colors.blue,
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Text(choice.title),
-                    ],
-                  ),
-                );
-              }).toList();
-            },
-          ),
-        ],
-        title: Text("个人中心"),
+        title: Text("我的"),
       ),
       body: Builder(builder: (context) {
         return RefreshIndicator(

@@ -54,14 +54,6 @@ class _DownloaderPageState extends State<DownloaderPage> {
   }
 
   @override
-  void didUpdateWidget(DownloaderPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    print("didUpdateWidget");
-    print("didUpdateWidget");
-    print("didUpdateWidget");
-  }
-
-  @override
   void dispose() {
     _unbindBackgroundIsolate();
     super.dispose();
@@ -221,111 +213,123 @@ class _DownloaderPageState extends State<DownloaderPage> {
         ],
       ),
       body: Builder(
-          builder: (context) => _isLoading
-              ? new Center(
-                  child: new CircularProgressIndicator(),
-                )
-              : _permissionReady
-                  ? new Container(
-                      child: new ListView(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        children: _items
-                            .map((item) => item.task == null
-                                ? new Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                                    child: Text(
-                                      "${item.name}",
-                                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 18.0),
-                                    ),
-                                  )
-                                : new Container(
-                                    padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-                                    child: InkWell(
-                                      onTap: item.task.status == DownloadTaskStatus.complete
-                                          ? () {
-                                              _openDownloadedFile(item.task).then((success) {
-                                                if (!success) {
-                                                  Scaffold.of(context).showSnackBar(SnackBar(
-                                                    content: Text('无法打开此文件。'),
-                                                  ));
-                                                }
-                                              });
-                                            }
-                                          : () => showDownloadInfo(item),
-                                      child: new Stack(
-                                        children: <Widget>[
-                                          new Container(
-                                            width: double.infinity,
-                                            height: 64.0,
-                                            child: new Row(
-                                              crossAxisAlignment: CrossAxisAlignment.center,
-                                              children: <Widget>[
-                                                new Expanded(
-                                                  child: new Text(
-                                                    item.name ?? "",
-                                                    maxLines: 1,
-                                                    softWrap: true,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                                new Padding(
-                                                  padding: const EdgeInsets.only(left: 8.0),
-                                                  child: _buildActionForItem(item),
-                                                ),
-                                              ],
+          builder: (context) => RefreshIndicator(
+                onRefresh: () {
+                  setState(() {
+                    _isLoading = true;
+                  });
+                  return _prepare();
+                },
+                child: Container(
+                  child: _isLoading
+                      ? new Center(
+                          child: new CircularProgressIndicator(),
+                        )
+                      : _permissionReady
+                          ? new Container(
+                              child: new ListView(
+                                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                children: _items
+                                    .map((item) => item.task == null
+                                        ? new Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                            child: Text(
+                                              "${item.name}",
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 18.0),
                                             ),
-                                          ),
-                                          item.task.status == DownloadTaskStatus.running ||
-                                                  item.task.status == DownloadTaskStatus.paused
-                                              ? new Positioned(
-                                                  left: 0.0,
-                                                  right: 0.0,
-                                                  bottom: 0.0,
-                                                  child: new LinearProgressIndicator(
-                                                    value: item.task.progress / 100,
+                                          )
+                                        : new Container(
+                                            padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                                            child: InkWell(
+                                              onTap: item.task.status == DownloadTaskStatus.complete
+                                                  ? () {
+                                                      _openDownloadedFile(item.task).then((success) {
+                                                        if (!success) {
+                                                          Scaffold.of(context).showSnackBar(SnackBar(
+                                                            content: Text('无法打开此文件。'),
+                                                          ));
+                                                        }
+                                                      });
+                                                    }
+                                                  : () => showDownloadInfo(item),
+                                              child: new Stack(
+                                                children: <Widget>[
+                                                  new Container(
+                                                    width: double.infinity,
+                                                    height: 64.0,
+                                                    child: new Row(
+                                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                                      children: <Widget>[
+                                                        new Expanded(
+                                                          child: new Text(
+                                                            item.name ?? "",
+                                                            maxLines: 1,
+                                                            softWrap: true,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                        ),
+                                                        new Padding(
+                                                          padding: const EdgeInsets.only(left: 8.0),
+                                                          child: _buildActionForItem(item),
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
-                                                )
-                                              : new Container()
-                                        ].where((child) => child != null).toList(),
+                                                  item.task.status == DownloadTaskStatus.running ||
+                                                          item.task.status == DownloadTaskStatus.paused
+                                                      ? new Positioned(
+                                                          left: 0.0,
+                                                          right: 0.0,
+                                                          bottom: 0.0,
+                                                          child: new LinearProgressIndicator(
+                                                            value: item.task.progress / 100,
+                                                          ),
+                                                        )
+                                                      : new Container()
+                                                ].where((child) => child != null).toList(),
+                                              ),
+                                            ),
+                                          ))
+                                    .toList(),
+                              ),
+                            )
+                          : new Container(
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                                      child: Text(
+                                        '请允许使用储存权限。',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(color: Colors.blueGrey, fontSize: 18.0),
                                       ),
                                     ),
-                                  ))
-                            .toList(),
-                      ),
-                    )
-                  : new Container(
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                              child: Text(
-                                '请允许使用储存权限。',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.blueGrey, fontSize: 18.0),
+                                    SizedBox(
+                                      height: 32.0,
+                                    ),
+                                    FlatButton(
+                                        onPressed: () {
+                                          AppConfig.instance.requestStoragePermissions().then((hasGranted) {
+                                            setState(() {
+                                              _permissionReady = hasGranted;
+                                            });
+                                          });
+                                        },
+                                        child: Text(
+                                          '重试',
+                                          style: TextStyle(
+                                              color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20.0),
+                                        ))
+                                  ],
+                                ),
                               ),
                             ),
-                            SizedBox(
-                              height: 32.0,
-                            ),
-                            FlatButton(
-                                onPressed: () {
-                                  AppConfig.instance.requestStoragePermissions().then((hasGranted) {
-                                    setState(() {
-                                      _permissionReady = hasGranted;
-                                    });
-                                  });
-                                },
-                                child: Text(
-                                  '重试',
-                                  style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20.0),
-                                ))
-                          ],
-                        ),
-                      ),
-                    )),
+                ),
+              )),
     );
   }
 
