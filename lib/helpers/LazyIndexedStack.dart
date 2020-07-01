@@ -15,7 +15,7 @@ class LazyIndexedStack extends StatefulWidget {
       this.textDirection,
       this.sizing = StackFit.loose,
       this.index,
-      this.reuse = true,
+      this.reuse = false,
       @required this.children})
       : super(key: key);
 

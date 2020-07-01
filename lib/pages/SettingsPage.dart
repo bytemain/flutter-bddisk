@@ -43,6 +43,16 @@ class SettingsPage extends StatelessWidget {
                       ),
                     ],
                   ),
+                  SettingsSection(
+                    title: '关于',
+                    tiles: [
+                      SettingsTile(
+                        title: '免责声明',
+                        subtitle: "本作品仅用于学习交流，不得用作其他用途。",
+                        onTap: () {},
+                      ),
+                    ],
+                  ),
                 ],
               );
             }
