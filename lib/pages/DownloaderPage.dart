@@ -4,6 +4,8 @@ import 'dart:ui';
 
 import 'package:bddisk/helpers/Download.dart';
 import 'package:bddisk/helpers/DownloadRepository.dart';
+import 'package:filesize/filesize.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:get/get.dart';
@@ -18,6 +20,12 @@ class _ItemHolder {
   _ItemHolder({this.name, this.task});
 }
 
+List<Choice> choices = const <Choice>[
+  const Choice("refresh", title: '刷新', icon: Icons.refresh),
+  const Choice("delete_all", title: '删除所有', icon: Icons.delete_sweep),
+  const Choice("test", title: 'test', icon: Icons.add),
+];
+
 class DownloaderPage extends StatefulWidget with WidgetsBindingObserver {
   final int homeIndex;
 
@@ -27,18 +35,13 @@ class DownloaderPage extends StatefulWidget with WidgetsBindingObserver {
   _DownloaderPageState createState() => new _DownloaderPageState();
 }
 
-const List<Choice> choices = const <Choice>[
-  const Choice("refresh", title: '刷新', icon: Icons.refresh),
-  const Choice("delete_all", title: '清除下载记录', icon: Icons.delete_sweep),
-  const Choice("delete_all_file", title: '删除所有文件', icon: Icons.delete_forever),
-];
-
 class _DownloaderPageState extends State<DownloaderPage> {
   List<TaskInfo> _tasks;
   List<_ItemHolder> _items;
   bool _isLoading;
   bool _permissionReady;
   ReceivePort _port = ReceivePort();
+  Map<String, dynamic> _progress = Map();
 
   @override
   void initState() {
@@ -51,6 +54,12 @@ class _DownloaderPageState extends State<DownloaderPage> {
     _isLoading = true;
     _permissionReady = false;
     _prepare();
+  }
+
+  @override
+  void didUpdateWidget(DownloaderPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    print("didUpdateWidget");
   }
 
   @override
@@ -70,16 +79,17 @@ class _DownloaderPageState extends State<DownloaderPage> {
       String id = data[0];
       DownloadTaskStatus status = data[1];
       int progress = data[2];
-
+      int downloaded = data[3];
+      int all = data[4];
       final task = _tasks?.firstWhere((task) => task.taskId == id);
       if (task != null) {
-        print(task.name);
-        _prepare();
         setState(() {
           task.status = status;
           task.progress = progress;
+          _progress[task.taskId] = {"downloaded": downloaded, "all": all};
         });
       }
+      _prepare();
     });
   }
 
@@ -87,10 +97,10 @@ class _DownloaderPageState extends State<DownloaderPage> {
     IsolateNameServer.removePortNameMapping('downloader_send_port');
   }
 
-  static downloadCallback(String id, DownloadTaskStatus status, int progress) {
+  static downloadCallback(String id, DownloadTaskStatus status, int progress, int downloaded, int all) {
     print('Background Isolate Callback: task: ($id) status: (${judgeDownloadStatus(status)}) progress: ($progress)');
     final SendPort send = IsolateNameServer.lookupPortByName('downloader_send_port');
-    send.send([id, status, progress]);
+    send.send([id, status, progress, downloaded, all]);
   }
 
   void _select(Choice choice) async {
@@ -169,168 +179,11 @@ class _DownloaderPageState extends State<DownloaderPage> {
         ignoreSafeArea: true,
       );
 
-  @override
-  Widget build(BuildContext context) {
-    return new Scaffold(
-      appBar: new AppBar(
-        title: new Text("下载"),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(choices[0].icon),
-            onPressed: () {
-              _select(choices[0]);
-            },
-          ),
-          IconButton(
-            icon: Icon(choices[1].icon),
-            onPressed: () {
-              _select(choices[1]);
-            },
-          ),
-          PopupMenuButton<Choice>(
-            onSelected: _select,
-            itemBuilder: (BuildContext context) {
-              return choices.skip(2).map((Choice choice) {
-                return PopupMenuItem<Choice>(
-                  value: choice,
-                  child: Row(
-                    children: <Widget>[
-                      Icon(
-                        choice.icon,
-                        size: 24,
-                        color: Colors.blue,
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Text(choice.title),
-                    ],
-                  ),
-                );
-              }).toList();
-            },
-          ),
-        ],
-      ),
-      body: Builder(
-          builder: (context) => RefreshIndicator(
-                onRefresh: () {
-                  setState(() {
-                    _isLoading = true;
-                  });
-                  return _prepare();
-                },
-                child: Container(
-                  child: _isLoading
-                      ? new Center(
-                          child: new CircularProgressIndicator(),
-                        )
-                      : _permissionReady
-                          ? new Container(
-                              child: new ListView(
-                                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                                children: _items
-                                    .map((item) => item.task == null
-                                        ? new Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                                            child: Text(
-                                              "${item.name}",
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 18.0),
-                                            ),
-                                          )
-                                        : new Container(
-                                            padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-                                            child: InkWell(
-                                              onTap: item.task.status == DownloadTaskStatus.complete
-                                                  ? () {
-                                                      _openDownloadedFile(item.task).then((success) {
-                                                        if (!success) {
-                                                          Scaffold.of(context).showSnackBar(SnackBar(
-                                                            content: Text('无法打开此文件。'),
-                                                          ));
-                                                        }
-                                                      });
-                                                    }
-                                                  : () => showDownloadInfo(item),
-                                              child: new Stack(
-                                                children: <Widget>[
-                                                  new Container(
-                                                    width: double.infinity,
-                                                    height: 64.0,
-                                                    child: new Row(
-                                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                                      children: <Widget>[
-                                                        new Expanded(
-                                                          child: new Text(
-                                                            item.name ?? "",
-                                                            maxLines: 1,
-                                                            softWrap: true,
-                                                            overflow: TextOverflow.ellipsis,
-                                                          ),
-                                                        ),
-                                                        new Padding(
-                                                          padding: const EdgeInsets.only(left: 8.0),
-                                                          child: _buildActionForItem(item),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  item.task.status == DownloadTaskStatus.running ||
-                                                          item.task.status == DownloadTaskStatus.paused
-                                                      ? new Positioned(
-                                                          left: 0.0,
-                                                          right: 0.0,
-                                                          bottom: 0.0,
-                                                          child: new LinearProgressIndicator(
-                                                            value: item.task.progress / 100,
-                                                          ),
-                                                        )
-                                                      : new Container()
-                                                ].where((child) => child != null).toList(),
-                                              ),
-                                            ),
-                                          ))
-                                    .toList(),
-                              ),
-                            )
-                          : new Container(
-                              child: Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                                      child: Text(
-                                        '请允许使用储存权限。',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(color: Colors.blueGrey, fontSize: 18.0),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      height: 32.0,
-                                    ),
-                                    FlatButton(
-                                        onPressed: () {
-                                          AppConfig.instance.requestStoragePermissions().then((hasGranted) {
-                                            setState(() {
-                                              _permissionReady = hasGranted;
-                                            });
-                                          });
-                                        },
-                                        child: Text(
-                                          '重试',
-                                          style: TextStyle(
-                                              color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20.0),
-                                        ))
-                                  ],
-                                ),
-                              ),
-                            ),
-                ),
-              )),
-    );
+  String getProgressText(_ItemHolder item) {
+    Map progress = _progress[item.task.taskId] ?? {};
+    int download = progress["downloaded"] ?? 0;
+    int all = progress["all"] ?? 0;
+    return "${filesize(download)} / ${filesize(all)}";
   }
 
   Widget _buildActionForItem(_ItemHolder item) {
@@ -507,24 +360,29 @@ class _DownloaderPageState extends State<DownloaderPage> {
 
   void _requestDownload(TaskInfo task) async {
     task.taskId = await DownloadRepository.instance.enqueue(task);
+    await _prepare();
   }
 
   void _cancelDownload(TaskInfo task) async {
     await DownloadRepository.instance.cancel(task);
+    await _prepare();
   }
 
   void _pauseDownload(TaskInfo task) async {
     await DownloadRepository.instance.pause(task);
+    await _prepare();
   }
 
   void _resumeDownload(TaskInfo task) async {
     String newTaskId = await DownloadRepository.instance.resume(task);
     task.taskId = newTaskId;
+    await _prepare();
   }
 
   void _retryDownload(TaskInfo task) async {
     String newTaskId = await DownloadRepository.instance.retry(task);
     task.taskId = newTaskId;
+    await _prepare();
   }
 
   Future<bool> _openDownloadedFile(TaskInfo task) {
@@ -535,18 +393,38 @@ class _DownloaderPageState extends State<DownloaderPage> {
     _cancelDownload(task);
     await DownloadRepository.instance.delete(task);
     await _prepare();
-    setState(() {});
   }
 
   Future<Null> _prepare() async {
     final tasks = await DownloadRepository.instance.tasks ?? [];
     _tasks = [];
     _items = [];
+    int count = 0;
+    _tasks.addAll(tasks.fold<List<TaskInfo>>([], (result, task) {
+      if (task.status != DownloadTaskStatus.complete) {
+        result.add(TaskInfo.fromDownloadTask(task));
+      }
+      return result;
+    }));
 
-    _tasks.addAll(tasks.map((task) => TaskInfo.fromDownloadTask(task)));
-    _items.add(_ItemHolder(name: '所有下载'));
-    for (int i = 0; i < _tasks.length; i++) {
-      _items.add(_ItemHolder(name: _tasks[i].name, task: _tasks[i]));
+    if (_tasks.length > 0) {
+      _items.add(_ItemHolder(name: '未完成'));
+      for (int i = 0; i < _tasks.length; i++) {
+        _items.add(_ItemHolder(name: _tasks[i].name, task: _tasks[i]));
+        count++;
+      }
+      _tasks.addAll(tasks.fold<List<TaskInfo>>([], (result, task) {
+        if (task.status == DownloadTaskStatus.complete) {
+          result.add(TaskInfo.fromDownloadTask(task));
+        }
+        return result;
+      }));
+      if (_tasks.skip(count).length > 0) {
+        _items.add(_ItemHolder(name: '已完成'));
+        for (int i = count; i < _tasks.length; i++) {
+          _items.add(_ItemHolder(name: _tasks[i].name, task: _tasks[i]));
+        }
+      }
     }
 
     _permissionReady = await AppConfig.instance.requestStoragePermissions();
@@ -556,5 +434,188 @@ class _DownloaderPageState extends State<DownloaderPage> {
     setState(() {
       _isLoading = false;
     });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+      appBar: new AppBar(
+        title: new Text("下载"),
+        actions: <Widget>[
+          ...choices.take(2).map(
+                (Choice choice) => Tooltip(
+                  message: choice.title,
+                  child: IconButton(
+                    icon: Icon(choice.icon),
+                    onPressed: () {
+                      _select(choice);
+                    },
+                  ),
+                ),
+              ),
+          PopupMenuButton<Choice>(
+            onSelected: _select,
+            itemBuilder: (BuildContext context) => choices
+                .skip(2)
+                .map(
+                  (Choice choice) => PopupMenuItem<Choice>(
+                    value: choice,
+                    child: Row(
+                      children: <Widget>[
+                        Icon(
+                          choice.icon,
+                          size: 24,
+                          color: Colors.blue,
+                        ),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        Text(choice.title),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ),
+      body: Builder(
+        builder: (context) => RefreshIndicator(
+          onRefresh: () {
+            setState(() {
+              _isLoading = true;
+            });
+            return _prepare();
+          },
+          child: Container(
+            child: _isLoading
+                ? new Center(
+                    child: new CircularProgressIndicator(),
+                  )
+                : _permissionReady
+                    ? new Container(
+                        child: _items.length > 0
+                            ? new ListView(
+                                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                children: _items
+                                    .map((item) => item.task == null
+                                        ? new Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                            child: Text(
+                                              "${item.name}",
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 18.0),
+                                            ),
+                                          )
+                                        : new Container(
+                                            padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                                            child: InkWell(
+                                              onTap: item.task.status == DownloadTaskStatus.complete
+                                                  ? () {
+                                                      _openDownloadedFile(item.task).then((success) {
+                                                        if (!success) {
+                                                          Scaffold.of(context).showSnackBar(SnackBar(
+                                                            content: Text('无法打开此文件。'),
+                                                          ));
+                                                        }
+                                                      });
+                                                    }
+                                                  : () => showDownloadInfo(item),
+                                              child: new Stack(
+                                                children: <Widget>[
+                                                  new Container(
+                                                    width: double.infinity,
+                                                    height: 86.0,
+                                                    child: new Row(
+                                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                                      children: <Widget>[
+                                                        new Expanded(
+                                                          child: new Text(
+                                                            item.name ?? "",
+                                                            maxLines: 1,
+                                                            softWrap: true,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                        ),
+                                                        new Padding(
+                                                          padding: const EdgeInsets.only(left: 8.0),
+                                                          child: _buildActionForItem(item),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  item.task.status == DownloadTaskStatus.running ||
+                                                          item.task.status == DownloadTaskStatus.paused
+                                                      ? new Positioned(
+                                                          left: 0.0,
+                                                          right: 0.0,
+                                                          bottom: 0.0,
+                                                          child: Column(
+                                                            children: [
+                                                              new LinearProgressIndicator(
+                                                                value: item.task.progress / 100,
+                                                              ),
+                                                              SizedBox(
+                                                                height: 5,
+                                                              ),
+                                                              Row(
+                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                children: [
+                                                                  Text("${item.task.progress}%"),
+                                                                  Text(getProgressText(item))
+                                                                ],
+                                                              )
+                                                            ],
+                                                          ),
+                                                        )
+                                                      : new Container(),
+                                                ].where((child) => child != null).toList(),
+                                              ),
+                                            ),
+                                          ))
+                                    .toList(),
+                              )
+                            : Center(
+                                child: Text("当前还没有下载任务哦~"),
+                              ),
+                      )
+                    : new Container(
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                                child: Text(
+                                  '请允许使用储存权限。',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.blueGrey, fontSize: 18.0),
+                                ),
+                              ),
+                              SizedBox(
+                                height: 32.0,
+                              ),
+                              FlatButton(
+                                onPressed: () {
+                                  AppConfig.instance.requestStoragePermissions().then((hasGranted) {
+                                    setState(() {
+                                      _permissionReady = hasGranted;
+                                    });
+                                  });
+                                },
+                                child: Text(
+                                  '重试',
+                                  style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20.0),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+          ),
+        ),
+      ),
+    );
   }
 }
