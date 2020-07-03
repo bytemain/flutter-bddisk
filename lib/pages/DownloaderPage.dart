@@ -15,6 +15,8 @@ import '../Constant.dart';
 
 const LISTEN_PORT_NAME = "downloader_send_port";
 Map<String, dynamic> _progress = Map();
+// 设置节流周期为 1000 毫秒
+Duration durationTime = Duration(milliseconds: 500);
 
 class _ItemHolder {
   final String name;
@@ -26,6 +28,7 @@ class _ItemHolder {
 List<Choice> choices = const <Choice>[
   const Choice("refresh", title: '刷新', icon: Icons.refresh),
   const Choice("delete_all", title: '删除所有', icon: Icons.delete_sweep),
+  const Choice("test", title: 'test', icon: Icons.edit_attributes),
 ];
 
 class DownloaderPage extends StatefulWidget with WidgetsBindingObserver {
@@ -47,7 +50,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
   void initState() {
     super.initState();
     _bindBackgroundIsolate();
-    FlutterDownloader.registerCallback(downloadCallback, stepSize: 0);
+    FlutterDownloader.registerCallback(downloadCallback, stepSize: 1);
     setState(() {
       _isLoading = true;
       _permissionReady = false;
@@ -64,7 +67,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
   Future<Null> refresh() async {
     _unbindBackgroundIsolate();
     _bindBackgroundIsolate();
-    FlutterDownloader.registerCallback(downloadCallback, stepSize: 0);
+    FlutterDownloader.registerCallback(downloadCallback, stepSize: 1);
     setState(() {
       _isLoading = true;
       _permissionReady = false;
@@ -86,26 +89,33 @@ class _DownloaderPageState extends State<DownloaderPage> {
         _bindBackgroundIsolate();
         return;
       }
+      bool canRun = true;
+
       _port.listen((dynamic data) {
         String id = data[0];
         DownloadTaskStatus status = data[1];
         int progress = data[2];
         int downloaded = data[3];
         int all = data[4];
-        DownloadRepository.instance.tasks.then((tasks) {
-          tasks = tasks ?? [];
-          var task = tasks?.firstWhere((task) => task.taskId == id, orElse: () => null);
-          print(
-              'Background Isolate Callback: task: ($id) status: (${judgeDownloadStatus(status)}) progress: ($progress)');
-          print('Background Isolate Callback: task: ($id) downloaded: (${downloaded}) all: ($all)');
-          if (task != null) {
-            setState(() {
-              _prepare();
-              _progress[task.taskId] = {"downloaded": downloaded, "all": all};
-            });
-          } else {
-            print("未找到 task");
-          }
+        if (!canRun) return;
+        canRun = false;
+        Timer(durationTime, () {
+          DownloadRepository.instance.tasks.then((tasks) {
+            tasks = tasks ?? [];
+            var task = tasks?.firstWhere((task) => task.taskId == id, orElse: () => null);
+            print(
+                'Background Isolate Callback: task: ($id) status: (${judgeDownloadStatus(status)}) progress: ($progress)');
+            print('Background Isolate Callback: task: ($id) downloaded: (${downloaded}) all: ($all)');
+            if (task != null) {
+              setState(() {
+                _prepare();
+                _progress[task.taskId] = {"downloaded": downloaded, "all": all};
+              });
+            } else {
+              print("未找到 task");
+            }
+          });
+          canRun = true;
         });
       }, onError: (e) {
         print(e);

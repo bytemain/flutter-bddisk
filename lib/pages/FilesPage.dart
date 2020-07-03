@@ -8,11 +8,16 @@ import 'package:bddisk/models/BdDiskFile.dart';
 import 'package:bddisk/models/BdDiskFileStore.dart';
 import 'package:bddisk/pages/FileInfoPage.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
 
 import 'SearchPage.dart';
 
-// ignore: must_be_immutable
+List<Choice> choices = const <Choice>[
+  const Choice("add_file", title: '上传', icon: Icons.add),
+  const Choice("test", title: 'test', icon: Icons.edit_attributes),
+];
+
 class FilesPage extends StatefulWidget {
   final BdDiskFileStore fileStore = BdDiskFileStore();
 
@@ -149,6 +154,51 @@ class _FilesPageState extends State<FilesPage> {
     );
   }
 
+  void _select(Choice choice) async {
+    switch (choice.key) {
+      case "add_file":
+        print("add_file");
+        Get.bottomSheet(Container(
+          margin: const EdgeInsets.only(top: 25, left: 10, right: 10),
+          decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.all(Radius.circular(15)),
+              boxShadow: [BoxShadow(blurRadius: 10, color: Colors.grey[300], spreadRadius: 5)]),
+          child: Flexible(
+            child: GridView.count(
+                physics: NeverScrollableScrollPhysics(),
+                crossAxisCount: 4,
+                mainAxisSpacing: 8.0,
+                crossAxisSpacing: 8.0,
+                childAspectRatio: 4 / 5,
+                children: <String, String>{
+                  'file_add_btn_scan.png': "扫一扫",
+                  'file_add_btn_photo.png': "上传照片",
+                  'file_add_btn_video.png': "上传视频",
+                  'file_add_btn_note.png': "新建笔记",
+                  'file_add_btn_file.png': "上传文档",
+                  'file_add_btn_music.png': "上传音乐",
+                  'file_add_btn_folder.png': "新建文件夹",
+                  'file_add_btn_other.png': "上传其他文件",
+                }.entries.map((MapEntry entry) {
+                  return Column(
+                    children: <Widget>[
+                      Container(
+                        padding: const EdgeInsets.all(9),
+                        child: Image.asset(
+                          "assets/" + entry.key,
+                        ),
+                      ),
+                      Text(entry.value, style: TextStyle(fontSize: 12))
+                    ],
+                  );
+                }).toList()),
+          ),
+        ));
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,6 +212,43 @@ class _FilesPageState extends State<FilesPage> {
                 icon: Icon(Icons.chevron_left, color: Colors.black),
                 onPressed: _onBackParentDir,
               ),
+        actions: <Widget>[
+          ...choices.take(1).map(
+                (Choice choice) => Tooltip(
+                  message: choice.title,
+                  child: IconButton(
+                    icon: Icon(choice.icon),
+                    onPressed: () {
+                      _select(choice);
+                    },
+                  ),
+                ),
+              ),
+          PopupMenuButton<Choice>(
+            onSelected: _select,
+            itemBuilder: (BuildContext context) => choices
+                .skip(1)
+                .map(
+                  (Choice choice) => PopupMenuItem<Choice>(
+                    value: choice,
+                    child: Row(
+                      children: <Widget>[
+                        Icon(
+                          choice.icon,
+                          size: 24,
+                          color: Colors.blue,
+                        ),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        Text(choice.title),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
       ),
       body: Builder(
         builder: (BuildContext context) {
