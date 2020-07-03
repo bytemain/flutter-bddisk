@@ -3,14 +3,11 @@ import 'dart:async';
 import 'package:bddisk/Constant.dart';
 import 'package:bddisk/components/FilesList.dart';
 import 'package:bddisk/components/SearchInput.dart';
-import 'package:bddisk/helpers/BdDiskApiClient.dart';
 import 'package:bddisk/helpers/DownloadRepository.dart';
-import 'package:bddisk/helpers/Utils.dart';
 import 'package:bddisk/models/BdDiskFile.dart';
 import 'package:bddisk/models/BdDiskFileStore.dart';
-import 'package:filesize/filesize.dart';
+import 'package:bddisk/pages/FileInfoPage.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
 
 import 'SearchPage.dart';
@@ -18,7 +15,6 @@ import 'SearchPage.dart';
 // ignore: must_be_immutable
 class FilesPage extends StatefulWidget {
   final BdDiskFileStore fileStore = BdDiskFileStore();
-  final BdDiskApiClient apiClient = BdDiskApiClient();
 
   // 根目录时是否允许关闭文件管理浏览页面
   bool allowPop;
@@ -53,87 +49,12 @@ class _FilesPageState extends State<FilesPage> {
 
   void _onFileTap(BdDiskFile file) {
     if (file.isDir == 0) {
-      List<int> fsIds = List();
-      fsIds.add(file.fsId);
-      widget.apiClient.getFileMetas(fsIds, thumb: 1, dLink: 1, extra: 1).then((diskFiles) {
-        BdDiskFile diskFile = diskFiles[0];
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => Scaffold(
-              appBar: AppBar(title: Text('${diskFile.serverFilename}')),
-              floatingActionButton: FloatingActionButton(
-                onPressed: () {
-                  DownloadRepository.instance
-                      .enqueue(TaskInfo(name: '${diskFile.serverFilename}', link: diskFile.dLink));
-                  Get.rawSnackbar(
-                    message: "开始下载~",
-                    onTap: (GetBar snack) {
-                      snack.show();
-                    },
-                    shouldIconPulse: true,
-                    mainButton: FlatButton(
-                      child: Text(
-                        "查看",
-                        style: TextStyle(color: Colors.lightBlue, fontSize: 14),
-                      ),
-                      onPressed: () {
-                        Get.toNamed("/Home?index=1");
-                      },
-                    ),
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
-                },
-                child: Icon(Icons.cloud_download),
-                backgroundColor: Colors.green,
-              ),
-              body: Center(
-                child: SingleChildScrollView(
-                  child: Wrap(
-                    children: <Widget>[
-                      ListTile(
-                        leading: Icon(Icons.local_play),
-                        title: Text('${diskFile.path}'),
-                      ),
-                      ListTile(
-                        leading: Icon(Icons.access_time),
-                        title: Text("创建时间："),
-                        subtitle: Text("${Utils.getDataTime(diskFile.serverCTime)}"),
-                      ),
-                      ListTile(
-                        leading: Icon(Icons.access_time),
-                        title: Text("修改时间："),
-                        subtitle: Text("${Utils.getDataTime(diskFile.serverMTime)}"),
-                      ),
-                      ListTile(
-                        leading: Icon(Icons.insert_drive_file),
-                        title: Text("文件大小："),
-                        subtitle: Text(filesize(diskFile.size ?? 0)),
-                      ),
-                      ListTile(
-                        leading: Icon(Icons.link),
-                        title: Text("下载链接："),
-                        subtitle: Text("${diskFile.dLink}"),
-                        isThreeLine: true,
-                      ),
-                      ListTile(
-                        leading: Icon(Icons.apps),
-                        title: Text("分类："),
-                        subtitle: Text("${diskFile.category}"),
-                      ),
-                      ListTile(
-                        leading: Icon(Icons.confirmation_number),
-                        title: Text("文件md5："),
-                        subtitle: Text("${diskFile.md5}"),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FileInfoPage(file.fsId),
+        ),
+      );
     } else {
       _currPath = file.path;
       _requestFiles();
@@ -143,6 +64,16 @@ class _FilesPageState extends State<FilesPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.rootPath != null) {
+      _initRootPath(widget.rootPath);
+    } else {
+      _initRootPath("/");
+    }
+  }
+
+  @override
+  void didUpdateWidget(FilesPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
     if (widget.rootPath != null) {
       _initRootPath(widget.rootPath);
     } else {
