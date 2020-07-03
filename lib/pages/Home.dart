@@ -1,4 +1,3 @@
-import 'package:bddisk/helpers/LazyIndexedStack.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -74,7 +73,7 @@ class _HomeState extends State<Home> {
     ];
 
     return Scaffold(
-      body: LazyIndexedStack(
+      body: IndexedStack(
         index: _selectedIndex,
         children: _widgetOptions,
       ),

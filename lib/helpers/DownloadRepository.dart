@@ -41,22 +41,23 @@ class DownloadRepository {
     _localPath = (await _findLocalPath()) + Platform.pathSeparator + 'Download';
 
     final savedDir = Directory(_localPath);
-    print("_localPath $_localPath");
     bool hasExisted = await savedDir.exists();
     if (!hasExisted) {
       savedDir.create();
     }
   }
 
-  Future<String> enqueue(TaskInfo task, {showNotification: true, openFileFromNotification: true, isBd: true}) async {
+  Future<String> enqueue(String downloadUrl, String fileName,
+      {showNotification: true, openFileFromNotification: true, isBd: true}) async {
     String token = (await AppConfig.instance.token)?.accessToken;
-    String url = isBd ? task.link + "&access_token=$token" : task.link;
+    String url = isBd ? downloadUrl + "&access_token=$token" : downloadUrl;
     if (_localPath == null) {
       AppConfig.instance.requestStoragePermissions();
       await init();
     }
     return await FlutterDownloader.enqueue(
       url: url,
+      fileName: fileName,
       savedDir: _localPath,
       showNotification: showNotification,
       openFileFromNotification: openFileFromNotification,
@@ -64,27 +65,27 @@ class DownloadRepository {
     );
   }
 
-  void cancel(TaskInfo task) async {
+  void cancel(DownloadTask task) async {
     await FlutterDownloader.cancel(taskId: task.taskId);
   }
 
-  void pause(TaskInfo task) async {
+  void pause(DownloadTask task) async {
     await FlutterDownloader.pause(taskId: task.taskId);
   }
 
-  Future<String> resume(TaskInfo task) async {
+  Future<String> resume(DownloadTask task) async {
     return await FlutterDownloader.resume(taskId: task.taskId);
   }
 
-  Future<String> retry(TaskInfo task) async {
+  Future<String> retry(DownloadTask task) async {
     return await FlutterDownloader.retry(taskId: task.taskId);
   }
 
-  void delete(TaskInfo task, {bool shouldDeleteContent: true}) async {
+  void delete(DownloadTask task, {bool shouldDeleteContent: true}) async {
     await FlutterDownloader.remove(taskId: task.taskId, shouldDeleteContent: shouldDeleteContent);
   }
 
-  Future<bool> open(TaskInfo task) {
+  Future<bool> open(DownloadTask task) {
     return FlutterDownloader.open(taskId: task.taskId);
   }
 
@@ -92,24 +93,4 @@ class DownloadRepository {
     final directory = await getExternalStorageDirectory();
     return directory.path;
   }
-}
-
-class TaskInfo {
-  final String name;
-  final String link;
-  String taskId;
-  int progress = 0;
-  DownloadTaskStatus status = DownloadTaskStatus.undefined;
-  DownloadTask downloadTask;
-
-  TaskInfo({this.name, this.link});
-
-  TaskInfo.fromDownloadTask(
-    DownloadTask task,
-  )   : this.link = task.url,
-        this.name = task.filename,
-        this.taskId = task.taskId,
-        this.progress = task.progress,
-        this.status = task.status,
-        this.downloadTask = task;
 }

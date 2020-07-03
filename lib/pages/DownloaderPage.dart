@@ -14,12 +14,11 @@ import '../AppConfig.dart';
 import '../Constant.dart';
 
 const LISTEN_PORT_NAME = "downloader_send_port";
-
 Map<String, dynamic> _progress = Map();
 
 class _ItemHolder {
   final String name;
-  final TaskInfo task;
+  final DownloadTask task;
 
   _ItemHolder({this.name, this.task});
 }
@@ -27,7 +26,6 @@ class _ItemHolder {
 List<Choice> choices = const <Choice>[
   const Choice("refresh", title: '刷新', icon: Icons.refresh),
   const Choice("delete_all", title: '删除所有', icon: Icons.delete_sweep),
-  const Choice("test", title: 'test', icon: Icons.add),
 ];
 
 class DownloaderPage extends StatefulWidget with WidgetsBindingObserver {
@@ -40,7 +38,6 @@ class DownloaderPage extends StatefulWidget with WidgetsBindingObserver {
 }
 
 class _DownloaderPageState extends State<DownloaderPage> {
-  List<TaskInfo> _tasks;
   List<_ItemHolder> _items;
   bool _isLoading;
   bool _permissionReady;
@@ -49,21 +46,29 @@ class _DownloaderPageState extends State<DownloaderPage> {
   @override
   void initState() {
     super.initState();
-
     _bindBackgroundIsolate();
-
-    FlutterDownloader.registerCallback(downloadCallback, stepSize: 1);
-
-    _isLoading = true;
-    _permissionReady = false;
+    FlutterDownloader.registerCallback(downloadCallback, stepSize: 0);
+    setState(() {
+      _isLoading = true;
+      _permissionReady = false;
+    });
     _prepare();
   }
 
   @override
   void didUpdateWidget(DownloaderPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _isLoading = true;
-    _permissionReady = false;
+    refresh();
+  }
+
+  Future<Null> refresh() async {
+    _unbindBackgroundIsolate();
+    _bindBackgroundIsolate();
+    FlutterDownloader.registerCallback(downloadCallback, stepSize: 0);
+    setState(() {
+      _isLoading = true;
+      _permissionReady = false;
+    });
     _prepare();
   }
 
@@ -74,41 +79,58 @@ class _DownloaderPageState extends State<DownloaderPage> {
   }
 
   void _bindBackgroundIsolate() {
-    bool isSuccess = IsolateNameServer.registerPortWithName(_port.sendPort, LISTEN_PORT_NAME);
-    if (!isSuccess) {
+    try {
+      bool isSuccess = IsolateNameServer.registerPortWithName(_port.sendPort, LISTEN_PORT_NAME);
+      if (!isSuccess) {
+        _unbindBackgroundIsolate();
+        _bindBackgroundIsolate();
+        return;
+      }
+      _port.listen((dynamic data) {
+        String id = data[0];
+        DownloadTaskStatus status = data[1];
+        int progress = data[2];
+        int downloaded = data[3];
+        int all = data[4];
+        DownloadRepository.instance.tasks.then((tasks) {
+          tasks = tasks ?? [];
+          var task = tasks?.firstWhere((task) => task.taskId == id, orElse: () => null);
+          print(
+              'Background Isolate Callback: task: ($id) status: (${judgeDownloadStatus(status)}) progress: ($progress)');
+          print('Background Isolate Callback: task: ($id) downloaded: (${downloaded}) all: ($all)');
+          if (task != null) {
+            setState(() {
+              _prepare();
+              _progress[task.taskId] = {"downloaded": downloaded, "all": all};
+            });
+          } else {
+            print("未找到 task");
+          }
+        });
+      }, onError: (e) {
+        print(e);
+      });
+    } on Exception {
       _unbindBackgroundIsolate();
       _bindBackgroundIsolate();
       return;
     }
-    _port.listen((dynamic data) {
-      String id = data[0];
-      DownloadTaskStatus status = data[1];
-      int progress = data[2];
-      int downloaded = data[3];
-      int all = data[4];
-      final task = _tasks?.firstWhere((task) => task.taskId == id);
-      print(_tasks.length);
-      if (task != null) {
-        print(
-            'Background Isolate Callback: task: ($id) status: (${judgeDownloadStatus(status)}) progress: ($progress)');
-        print('Background Isolate Callback: task: ($id) downloaded: (${downloaded}) all: ($all)');
-        setState(() {
-          task.status = status;
-          task.progress = progress;
-          _progress[task.taskId] = {"downloaded": downloaded, "all": all};
-        });
-      }
-      _prepare();
-    });
   }
 
   void _unbindBackgroundIsolate() {
-    IsolateNameServer.removePortNameMapping(LISTEN_PORT_NAME);
+    IsolateNameServer.removePortNameMapping("downloader_send_port");
+    _port.close();
+    _port = ReceivePort();
   }
 
   static downloadCallback(String id, DownloadTaskStatus status, int progress, int downloaded, int all) {
-    final SendPort send = IsolateNameServer.lookupPortByName(LISTEN_PORT_NAME);
-    send.send([id, status, progress, downloaded, all]);
+    print("downloadCallback:  task: ($id) ");
+    SendPort send = IsolateNameServer.lookupPortByName("downloader_send_port");
+    if (send != null) {
+      send.send([id, status, progress, downloaded, all]);
+    } else {
+      print("未找到 send");
+    }
   }
 
   void _select(Choice choice) async {
@@ -123,8 +145,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
         break;
       case "refresh":
         print("refresh");
-        await _prepare();
-        setState(() {});
+        refresh();
         break;
     }
   }
@@ -149,11 +170,11 @@ class _DownloaderPageState extends State<DownloaderPage> {
                 ),
                 ListTile(
                   leading: Icon(Icons.link),
-                  title: Text("link: ${item.task?.link}".substring(0, 20) + "..."),
+                  title: Text("link: ${item.task?.url}".substring(0, 20) + "..."),
                   onTap: () => Get.defaultDialog(
                     title: "Link",
                     content: TextField(
-                      controller: TextEditingController()..text = item.task?.link ?? "",
+                      controller: TextEditingController()..text = item.task?.url ?? "",
                       maxLines: 8,
                       onChanged: (text) => {},
                     ),
@@ -161,11 +182,11 @@ class _DownloaderPageState extends State<DownloaderPage> {
                 ),
                 ListTile(
                   leading: Icon(Icons.folder),
-                  title: Text("位置: ${item.task?.downloadTask?.savedDir}".substring(0, 20) + "..."),
+                  title: Text("位置: ${item.task?.savedDir}".substring(0, 20) + "..."),
                   onTap: () => Get.defaultDialog(
                     title: "Link",
                     content: TextField(
-                      controller: TextEditingController()..text = item.task?.downloadTask?.savedDir ?? "",
+                      controller: TextEditingController()..text = item.task?.savedDir ?? "",
                       maxLines: 3,
                       onChanged: (text) => {},
                     ),
@@ -195,7 +216,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
   }
 
   Widget _buildActionForItem(_ItemHolder item) {
-    TaskInfo task = item.task;
+    DownloadTask task = item.task;
     if (task.status == DownloadTaskStatus.undefined) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -366,72 +387,61 @@ class _DownloaderPageState extends State<DownloaderPage> {
     }
   }
 
-  void _requestDownload(TaskInfo task) async {
-    task.taskId = await DownloadRepository.instance.enqueue(task);
-    await _prepare();
+  void _requestDownload(DownloadTask task) async {
+    await DownloadRepository.instance.enqueue(task.url, task.filename);
+    refresh();
   }
 
-  void _cancelDownload(TaskInfo task) async {
-    await DownloadRepository.instance.cancel(task);
-    await _prepare();
-  }
-
-  void _pauseDownload(TaskInfo task) async {
+  void _pauseDownload(DownloadTask task) async {
     await DownloadRepository.instance.pause(task);
-    await _prepare();
+    refresh();
   }
 
-  void _resumeDownload(TaskInfo task) async {
-    String newTaskId = await DownloadRepository.instance.resume(task);
-    task.taskId = newTaskId;
-    await _prepare();
+  void _resumeDownload(DownloadTask task) async {
+    await DownloadRepository.instance.resume(task);
+    refresh();
   }
 
-  void _retryDownload(TaskInfo task) async {
-    String newTaskId = await DownloadRepository.instance.retry(task);
-    task.taskId = newTaskId;
-    await _prepare();
+  void _retryDownload(DownloadTask task) async {
+    await DownloadRepository.instance.retry(task);
+    refresh();
   }
 
-  Future<bool> _openDownloadedFile(TaskInfo task) {
+  Future<bool> _openDownloadedFile(DownloadTask task) {
     return DownloadRepository.instance.open(task);
   }
 
-  void _delete(TaskInfo task) async {
-    _cancelDownload(task);
+  void _delete(DownloadTask task) async {
+    await DownloadRepository.instance.cancel(task);
     await DownloadRepository.instance.delete(task);
-    await _prepare();
+    refresh();
   }
 
   Future<Null> _prepare() async {
     final tasks = await DownloadRepository.instance.tasks ?? [];
-    _tasks = [];
     _items = [];
-    int count = 0;
-    _tasks.addAll(tasks.fold<List<TaskInfo>>([], (result, task) {
+    List<DownloadTask> _unfinished = tasks.fold<List<DownloadTask>>([], (result, task) {
       if (task.status != DownloadTaskStatus.complete) {
-        result.add(TaskInfo.fromDownloadTask(task));
+        result.add(task);
       }
       return result;
-    }));
-
-    if (_tasks.length > 0) {
+    });
+    if (_unfinished.length > 0) {
       _items.add(_ItemHolder(name: '未完成'));
-      for (int i = 0; i < _tasks.length; i++) {
-        _items.add(_ItemHolder(name: _tasks[i].name, task: _tasks[i]));
-        count++;
+      for (int i = 0; i < _unfinished.length; i++) {
+        _items.add(_ItemHolder(name: _unfinished[i].filename, task: _unfinished[i]));
       }
     }
-    _tasks.addAll(tasks.fold<List<TaskInfo>>([], (result, task) {
+    List<DownloadTask> _finished = tasks.fold<List<DownloadTask>>([], (result, task) {
       if (task.status == DownloadTaskStatus.complete) {
-        result.add(TaskInfo.fromDownloadTask(task));
+        result.add(task);
       }
       return result;
-    }));
-    if (_tasks.skip(count).length > 0) {
+    });
+    if (_finished.length > 0) {
       _items.add(_ItemHolder(name: '已完成'));
-      for (int i = count; i < _tasks.length; i++) {
-        _items.add(_ItemHolder(name: _tasks[i].name, task: _tasks[i]));
+      for (int i = 0; i < _finished.length; i++) {
+        _items.add(_ItemHolder(name: _finished[i].filename, task: _finished[i]));
       }
     }
     _permissionReady = await AppConfig.instance.requestStoragePermissions();
@@ -489,10 +499,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
       body: Builder(
         builder: (context) => RefreshIndicator(
           onRefresh: () {
-            setState(() {
-              _isLoading = true;
-            });
-            return _prepare();
+            return refresh();
           },
           child: Container(
             child: _isLoading

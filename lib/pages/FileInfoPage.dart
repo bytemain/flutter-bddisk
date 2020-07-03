@@ -92,7 +92,7 @@ class _FileInfoPageState extends State<FileInfoPage> {
       floatingActionButton: diskFile != null
           ? FloatingActionButton(
               onPressed: () {
-                DownloadRepository.instance.enqueue(TaskInfo(name: '${diskFile.serverFilename}', link: diskFile.dLink));
+                DownloadRepository.instance.enqueue(diskFile.dLink, diskFile.serverFilename);
                 Get.rawSnackbar(
                   message: "开始下载~",
                   onTap: (GetBar snack) {
