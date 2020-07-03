@@ -9,7 +9,6 @@ import 'AppConfig.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AppConfig.instance.requestNotificationPermissions();
   await FlutterDownloader.initialize(debug: true);
   runApp(MyApp());
 }

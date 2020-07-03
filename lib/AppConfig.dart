@@ -54,16 +54,4 @@ class AppConfig {
       return false;
     }
   }
-
-  Future<bool> requestNotificationPermissions() async {
-    bool isGranted = await Permission.notification.request().isGranted;
-    if (isGranted) {
-      return true;
-    } else {
-      if (await Permission.notification.isPermanentlyDenied) {
-        openAppSettings();
-      }
-      return false;
-    }
-  }
 }

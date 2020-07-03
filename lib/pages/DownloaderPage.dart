@@ -13,6 +13,10 @@ import 'package:get/get.dart';
 import '../AppConfig.dart';
 import '../Constant.dart';
 
+const LISTEN_PORT_NAME = "downloader_send_port";
+
+Map<String, dynamic> _progress = Map();
+
 class _ItemHolder {
   final String name;
   final TaskInfo task;
@@ -41,7 +45,6 @@ class _DownloaderPageState extends State<DownloaderPage> {
   bool _isLoading;
   bool _permissionReady;
   ReceivePort _port = ReceivePort();
-  Map<String, dynamic> _progress = Map();
 
   @override
   void initState() {
@@ -59,7 +62,9 @@ class _DownloaderPageState extends State<DownloaderPage> {
   @override
   void didUpdateWidget(DownloaderPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    print("didUpdateWidget");
+    _isLoading = true;
+    _permissionReady = false;
+    _prepare();
   }
 
   @override
@@ -69,7 +74,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
   }
 
   void _bindBackgroundIsolate() {
-    bool isSuccess = IsolateNameServer.registerPortWithName(_port.sendPort, 'downloader_send_port');
+    bool isSuccess = IsolateNameServer.registerPortWithName(_port.sendPort, LISTEN_PORT_NAME);
     if (!isSuccess) {
       _unbindBackgroundIsolate();
       _bindBackgroundIsolate();
@@ -82,7 +87,11 @@ class _DownloaderPageState extends State<DownloaderPage> {
       int downloaded = data[3];
       int all = data[4];
       final task = _tasks?.firstWhere((task) => task.taskId == id);
+      print(_tasks.length);
       if (task != null) {
+        print(
+            'Background Isolate Callback: task: ($id) status: (${judgeDownloadStatus(status)}) progress: ($progress)');
+        print('Background Isolate Callback: task: ($id) downloaded: (${downloaded}) all: ($all)');
         setState(() {
           task.status = status;
           task.progress = progress;
@@ -94,12 +103,11 @@ class _DownloaderPageState extends State<DownloaderPage> {
   }
 
   void _unbindBackgroundIsolate() {
-    IsolateNameServer.removePortNameMapping('downloader_send_port');
+    IsolateNameServer.removePortNameMapping(LISTEN_PORT_NAME);
   }
 
   static downloadCallback(String id, DownloadTaskStatus status, int progress, int downloaded, int all) {
-    print('Background Isolate Callback: task: ($id) status: (${judgeDownloadStatus(status)}) progress: ($progress)');
-    final SendPort send = IsolateNameServer.lookupPortByName('downloader_send_port');
+    final SendPort send = IsolateNameServer.lookupPortByName(LISTEN_PORT_NAME);
     send.send([id, status, progress, downloaded, all]);
   }
 
@@ -413,20 +421,19 @@ class _DownloaderPageState extends State<DownloaderPage> {
         _items.add(_ItemHolder(name: _tasks[i].name, task: _tasks[i]));
         count++;
       }
-      _tasks.addAll(tasks.fold<List<TaskInfo>>([], (result, task) {
-        if (task.status == DownloadTaskStatus.complete) {
-          result.add(TaskInfo.fromDownloadTask(task));
-        }
-        return result;
-      }));
-      if (_tasks.skip(count).length > 0) {
-        _items.add(_ItemHolder(name: '已完成'));
-        for (int i = count; i < _tasks.length; i++) {
-          _items.add(_ItemHolder(name: _tasks[i].name, task: _tasks[i]));
-        }
+    }
+    _tasks.addAll(tasks.fold<List<TaskInfo>>([], (result, task) {
+      if (task.status == DownloadTaskStatus.complete) {
+        result.add(TaskInfo.fromDownloadTask(task));
+      }
+      return result;
+    }));
+    if (_tasks.skip(count).length > 0) {
+      _items.add(_ItemHolder(name: '已完成'));
+      for (int i = count; i < _tasks.length; i++) {
+        _items.add(_ItemHolder(name: _tasks[i].name, task: _tasks[i]));
       }
     }
-
     _permissionReady = await AppConfig.instance.requestStoragePermissions();
 
     DownloadRepository.instance.init();

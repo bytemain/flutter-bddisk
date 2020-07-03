@@ -37,6 +37,12 @@ class _PersonalCenterState extends State<PersonalCenter> {
     _requestBdData();
   }
 
+  @override
+  void didUpdateWidget(PersonalCenter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _requestBdData();
+  }
+
   Future<void> _requestBdData() async {
     widget.userRepository.getUserInfo().then((user) => setState(() => _bdDiskUser = user));
     widget.userRepository.getDiskQuota().then((quota) => setState(() => _bdDiskQuota = quota));
@@ -143,11 +149,7 @@ class _PersonalCenterState extends State<PersonalCenter> {
         });
         break;
       case "exit":
-        Get.rawSnackbar(message: "Bye.");
-        Timer(Duration(milliseconds: 1000), () {
-          Scaffold.of(context).hideCurrentSnackBar();
-          SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-        });
+        SystemChannels.platform.invokeMethod('SystemNavigator.pop');
         break;
       case "settings":
         Get.toNamed("/Settings");

@@ -62,10 +62,6 @@ class BdDiskApiClient {
   }
 
   Future<Map<String, dynamic>> logout() async {
-    HttpClientRequest request1 = await httpClient
-        .getUrl(Uri.parse("https://openapi.baidu.com/connect/2.0/logout?access_token=${await accessToken}&next=xxx"));
-    await request1.close();
-
     HttpClientRequest request = await httpClient.getUrl(Uri.parse(
         "https://openapi.baidu.com/rest/2.0/passport/auth/revokeAuthorization?access_token=${await accessToken}"));
 

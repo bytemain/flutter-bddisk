@@ -49,8 +49,12 @@ class DownloadRepository {
   }
 
   Future<String> enqueue(TaskInfo task, {showNotification: true, openFileFromNotification: true, isBd: true}) async {
-    String token = (await AppConfig.instance.token).accessToken;
+    String token = (await AppConfig.instance.token)?.accessToken;
     String url = isBd ? task.link + "&access_token=$token" : task.link;
+    if (_localPath == null) {
+      AppConfig.instance.requestStoragePermissions();
+      await init();
+    }
     return await FlutterDownloader.enqueue(
       url: url,
       savedDir: _localPath,

@@ -1,9 +1,12 @@
 import 'package:bddisk/AppConfig.dart';
 import 'package:bddisk/models/BdOAuth2Token.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:settings_ui/settings_ui.dart';
 
 class SettingsPage extends StatelessWidget {
+  int _threadNum = 1;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -13,7 +16,7 @@ class SettingsPage extends StatelessWidget {
       body: FutureBuilder(
           future: AppConfig.instance.token,
           builder: (context, AsyncSnapshot<BdOAuth2Token> snapshot) {
-            if (snapshot.data.accessToken != null) {
+            if (snapshot.hasData && snapshot.data.accessToken != null) {
               return SettingsList(
                 sections: [
                   SettingsSection(
@@ -23,6 +26,10 @@ class SettingsPage extends StatelessWidget {
                         title: "access_token",
                         leading: Icon(Icons.fingerprint),
                         subtitle: snapshot.data.accessToken,
+                      ),
+                      SettingsTile(
+                        title: "刷新信息",
+                        trailing: Icon(Icons.refresh),
                       )
                     ],
                   ),
@@ -31,9 +38,17 @@ class SettingsPage extends StatelessWidget {
                     tiles: [
                       SettingsTile(
                         title: '下载线程数',
-                        subtitle: '1',
+                        subtitle: '$_threadNum',
                         leading: Icon(Icons.language),
-                        onTap: () {},
+                        onTap: () {
+                          Get.defaultDialog(
+                              title: "下载线程数",
+                              content: TextField(
+                                controller: TextEditingController()..text = '$_threadNum',
+                                maxLines: 1,
+                                onChanged: (text) => {_threadNum = int.tryParse(text) ?? _threadNum},
+                              ));
+                        },
                       ),
                       SettingsTile.switchTile(
                         title: '删除任务时删除文件',
