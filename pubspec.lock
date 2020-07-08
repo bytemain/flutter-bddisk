@@ -79,9 +79,11 @@ packages:
   flutter_downloader:
     dependency: "direct main"
     description:
-      path: "../flutter_downloader"
-      relative: true
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: "3361ea512bd0054c9a52e7cc14215c1e5f3970d2"
+      url: "https://github.com/riril/flutter_downloader"
+    source: git
     version: "1.4.4"
   flutter_test:
     dependency: "direct dev"
