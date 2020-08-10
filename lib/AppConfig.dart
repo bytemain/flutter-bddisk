@@ -21,7 +21,9 @@ class AppConfig {
     return _instance;
   }
 
-  static final String baiduClientId = 'iap3UEKzq5KeVg3KDj9bTfRt';
+  // 该 token 来自互联网，仅供学习交流。
+  // 因为学习的需要所以找到一个带上传权限的 token，上传目录：/apps/ES文件浏览器/
+  static final String baiduClientId = 'NqOMXF6XGhGRIGemsQ9nG0Na';
 
   static final String baiduOAuth2Url =
       'https://openapi.baidu.com/oauth/2.0/authorize?response_type=token&client_id=$baiduClientId&redirect_uri=oob&scope=basic,netdisk&display=mobile&state=xxx';
