@@ -1,6 +1,26 @@
 # bddisk
 
-A new Flutter application.
+一个简陋的百度网盘客户端。可以查看、搜索、下载文件。
+
+## Demo
+
+| 下载页面                                                   | 搜索页面                                                   | 文件页面                                                   |
+| ---------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------- |
+| ![下载](https://i.loli.net/2020/08/10/jSugMZtXhRLvWrO.png) | ![搜索](https://i.loli.net/2020/08/10/qzBGlmF6KSEpsPw.png) | ![文件](https://i.loli.net/2020/08/10/tdPDZafu1CGvQwb.png) |
+
+## 打包
+
+打包成 apk:
+
+```bash
+flutter build apk
+```
+
+可以选择对不同平台分开打包，可以降低单个apk的大小:
+
+```bash
+flutter build apk --target-platform android-arm64 --split-per-abi
+```
 
 ## Getting Started
 
